@@ -1,0 +1,105 @@
+label{
+	padding: 20px;
+}
+
+input, select{
+	border-radius: 5px;
+}
+
+select{
+	padding: 5px;
+}
+
+input[type="submit"]{
+	padding: 5px 15px;
+	font-family: 'Helvetica', 'Arial', sans-serif;
+	border: 0px;
+	background-color: #2E7D32;
+	color: #FFF;
+	font-weight: bold;
+}
+
+.cabecera{
+	padding: 20px;
+	font-family: 'Helvetica', 'Arial', sans-serif;
+	color: #FFF;
+	background-color: rgba(0, 0, 0, 1);
+}
+
+.elemento_menu_nav{
+	font-family: 'Helvetica', 'Arial', sans-serif;
+	font-weight: bold;
+}
+
+.elemento_menu_nav a{
+	color: #333;
+}
+
+.elemento_menu_nav a:hover{
+	background-color: #BBB;
+	color: #999;
+}
+
+.enviar_valores, .enviar_empleado{
+	padding-bottom: 20px;
+}
+
+.titulo_fecha{
+	font-family: 'Helvetica', 'Arial', sans-serif;
+	font-weight: bold;
+	color: #FFF;
+	background-color: #2E7D32;
+}
+
+.subtitulo_fecha{
+	font-family: 'Helvetica', 'Arial', sans-serif;
+	font-weight: bold;
+	color: #FFF;
+	background-color: #333;
+}
+
+.titulo_venta{
+	font-family: 'Helvetica', 'Arial', sans-serif;
+	background-color: #1565C0;
+}
+
+.subtitulo_venta, .enviar_valores{
+	font-family: 'Helvetica', 'Arial', sans-serif;
+	background-color: #1976D2;
+}
+
+.subtitulo_estimacion{
+	font-family: 'Helvetica', 'Arial', sans-serif;
+	background-color: #AAA;
+}
+
+.titulo_gasto{
+	font-family: 'Helvetica', 'Arial', sans-serif;
+	background-color: #C62828;
+}
+
+.subtitulo_gasto, .enviar_empleado{
+	font-family: 'Helvetica', 'Arial', sans-serif;
+	background-color: #D32F2F;
+}
+
+.titulo_elegir_mes, .btn_enviar{
+	padding: 20px;
+	background-color: #B0BEC5;
+}
+
+.estimado_aprox{
+	background-color: #FFFF00;
+}
+
+.bold{
+	font-weight: bold;
+}
+
+.blanco{
+	color: #FFF;
+}
+
+.negro{
+	color: #000;
+}
