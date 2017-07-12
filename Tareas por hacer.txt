@@ -1,0 +1,15 @@
+Modificaciones del sistema PHP - Aprobaciones de Marilú
+-> Separar capturas y seleccionar la fecha en la captura (Solo falta realizar el back-end)
+-> Mostrar notificaciones respecto a los días no registrados
+-> Desglosar por día, semana o fecha deseada la información de los reportes
+-> Permitir capturas en domingo
+-> Imprimir en PDF
+-> Permitir seleccionar los datos a mostrar de los reportes
+-> Modificar el modulo de gastos(solo falta el back-end y la bdd)
+-> Modificar el color de la meta, dependiendo si se esta debajo o encima de la misma
+-> Registro de usuarios
+-> Envio y notificaciones por correo, tanto de los reportes como de los movimientos
+-> Envio por whatsapp
+-> Registrar y capturar ayudas/manual de usuario
+-> Designar permisos a los diferentes usuarios existentes
+-> Registro de actividad (login, envíos, capturas, etc...)
