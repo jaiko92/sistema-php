@@ -1,5 +1,8 @@
 <?php 
+//Recuperar fecha actual
+$hoy = getdate();
 
+//Convertir a nombre del día
 function dia($num_dia){
 	switch ($num_dia) {
 		case '0':
@@ -37,7 +40,7 @@ function dia($num_dia){
 	return $nom_dia;
 }
 
-
+//Convertir a nombre del mes
 function mes($num_mes){
 	switch ($num_mes) {
 		case '1':
@@ -96,4 +99,35 @@ function mes($num_mes){
 	return $nom_mes;
 }
 
+//Obtener los datos de un usuario
+function obtener_datos_usuario($usuario){
+	$conexion = new ConexionBDD();
+	$sql = "SELECT * FROM usuario WHERE id_usuario = '".$usuario."'";
+	$datos = $conexion->obtenerDatos($sql);
+	$conexion->cerrarConexion();
+	return $datos;
+}
+
+//Convertir numero de permiso al puesto correspondiente
+function puesto($permiso){
+	switch ($permiso) {
+		case '0':
+			$puesto = "Administrador";
+			break;
+		
+		case '1':
+			$puesto = "Ventas";
+			break;
+		
+		case '2':
+			$puesto = "Compras";
+			break;
+		
+		default:
+			echo "Error grave de sistema! Comunicarse con el administrador";
+			break;
+	}
+
+	return $puesto;
+}
 ?>

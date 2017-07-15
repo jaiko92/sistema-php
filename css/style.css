@@ -1,23 +1,14 @@
 label{
-	padding: 20px;
+	padding: 10px;
 }
 
-input, select{
-	border-radius: 5px;
+.container-vertical{
+	margin-top: 100px;
+	padding: 10px;
 }
 
-select{
-	padding: 5px;
-}
-
-input[type="submit"]{
-	padding: 5px 15px;
-	font-family: 'Helvetica', 'Arial', sans-serif;
-	border: 0px;
-	background-color: #2E7D32;
-	color: #FFF;
-	font-weight: bold;
-	margin: 5px;
+.container-xs-vertical{
+	margin-top: 20px;
 }
 
 .cabecera{
@@ -104,9 +95,10 @@ input[type="submit"]{
 	color: #000;
 }
 
-.formulario{
-	border-left: 5px double #000;
-	border-right: 5px double #000;
-	border-bottom: 5px double #000;
-	height: 400px;
+.fecha{
+	padding-bottom: 15px;
+}
+
+.btn-espacio{
+	padding: 10px;
 }
