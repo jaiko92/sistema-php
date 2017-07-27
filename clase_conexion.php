@@ -106,7 +106,7 @@
       
       $set = substr($set ,  0, -1) ;
       $sql = "UPDATE $tabla SET $set WHERE $condicion ;";
-      //   echo $sql;
+      //echo $sql;
       
       $this->ejecutarConsulta($sql);
       return true;

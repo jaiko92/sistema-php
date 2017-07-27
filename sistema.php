@@ -1,4 +1,8 @@
 <?php 
+//Recuperar fecha actual
+$hoy = getdate();
+
+//Revisar la sesión de usuario
 session_start();
 if(!isset($_SESSION["usuario"], $_SESSION["permiso"])){
 	header('Location: inicio');
@@ -6,11 +10,11 @@ if(!isset($_SESSION["usuario"], $_SESSION["permiso"])){
 	$user = $_SESSION["usuario"];
 	$permiso = $_SESSION["permiso"];
 	$nombre = $_SESSION["nombre"];
+	$username = $_SESSION["username"];
+	$email = $_SESSION["email"];
 }
 
 include "clase_conexion.php";
-
-include "funciones.php";
 
 include "header.php";
 

@@ -23,7 +23,7 @@
 					<li role="presentation" class="active elemento_menu_nav"><a href="#ingresar_valores" aria-controls="ingresar_valores" role="tab" data-toggle="tab">Ingresar valores</a></li>
 					<li role="presentation" class="elemento_menu_nav"><a href="#pendientes" aria-controls="pendientes" role="tab" data-toggle="tab">Pendientes</a></li>
 					<li role="presentation" class="elemento_menu_nav"><a href="#datos_usuario" aria-controls="datos_usuario" role="tab" data-toggle="tab">Datos del usuario</a></li>
-					<li role="presentation" class="elemento_menu_nav"><a href="#elegir_fecha" aria-controls="elegir_fecha" role="tab" data-toggle="tab">Elegir fecha para calcular</a></li>
+					<li role="presentation" class="elemento_menu_nav"><a href="#generar_reporte" aria-controls="generar_reporte" role="tab" data-toggle="tab">Elegir fecha para calcular</a></li>
 				</ul>
 			</nav>
 		</header>

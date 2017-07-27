@@ -1,7 +1,9 @@
 			<div class="tab-pane" role="tabpanel" id="pendientes">
 				<section class="row">
-					<form method="post" id="form_elegir_pendientes">
+					<form method="post" id="form_elegir_pendientes" class="form_envio">
 						<div class="col-xs-12 text-center titulo_elegir_mes form-inline">
+							<input type="hidden" name="op" id="op" value="3">
+							<input type="hidden" name="usuario" id="usuario" value="<?php echo $user; ?>">
 							<div class="form-group">
 								<label><input type="checkbox" name="pen_venta_utilidad" id="pen_venta_utilidad" value="1"> Ventas y Utilidades pendientes</label>
 							</div>

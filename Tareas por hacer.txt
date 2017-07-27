@@ -1,10 +1,10 @@
-Modificaciones del sistema PHP - Aprobaciones de Marilú
+Modificaciones del sistema PHP - Observaciones de Marilú
 -> Separar capturas y seleccionar la fecha en la captura (COMPLETADO)
--> Mostrar notificaciones respecto a los días no registrados (falta front-end)
--> Desglosar por día, semana o fecha deseada la información de los reportes (falta back-end)
--> Permitir capturas en domingo
+-> Mostrar notificaciones respecto a los días no registrados (COMPLETADO)
+-> Desglosar por día, semana o fecha deseada la información de los reportes (progreso)
+-> Permitir capturas en domingo (COMPLETADO)
 -> Imprimir en PDF
--> Permitir seleccionar los datos a mostrar de los reportes (falta back-end)
+-> Permitir seleccionar los datos a mostrar de los reportes (progreso)
 -> Modificar el modulo de gastos(COMPLETADO)
 -> Modificar el color de la meta, dependiendo si se esta debajo o encima de la misma
 -> Registro de usuarios(COMPLETADO)
