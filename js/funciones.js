@@ -87,6 +87,18 @@ $(document).ready(function(){
 		return false;
 	});//click-function
 
+	//Boton para generar los reportes en la pagina web
+	$("#btn_generar_reporte").click(function(){
+		$.ajax({
+			data: $("#form_generar_reporte").serialize(),
+			url: 'enviar_info.php', type: 'post',
+			success: function(data){
+				$(".contenido").html(data);
+			}//data
+		});//ajax
+		return false;
+	});//click-function
+
 	//Boton para eliminar el contenido generado
 	$(".elemento_menu_nav").click(function(event) {
 		$(".contenido").empty();

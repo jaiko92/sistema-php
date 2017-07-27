@@ -664,8 +664,73 @@ function calcular_estimado_dia($fecha){
 }
 
 //Calcular acumulado de empleado hasta el dia estimado
-function calcular_acumulado_empleado($emp){
+function calcular_acumulado_empleado($emp, $fecha){
+	$conexion = new ConexionBDD();
+	$fecha_mes = substr($fecha, 5, 2);
+	$fecha_anio = substr($fecha, 0, 4);
+	$fecha_inicial = $fecha_anio."-".$fecha_mes."-01";
 
+	$condicion = "num_empleado = '".$emp."' AND fecha BETWEEN '".$fecha_inicial."' AND '".$fecha."'";
+	$sql = "SELECT SUM(venta_dia) FROM registro_venta WHERE ";
+	$venta_acumulada = $conexion->ejecutarConsulta($sql.$condicion);
+	$sql = "SELECT SUM(utilidad_dia) FROM registro_venta WHERE ";
+	$utilidad_acumulada = $conexion->ejecutarConsulta($sql.$condicion);
+
+	$arr_acumulada = array(
+		'venta_acumulada' => $venta_acumulada, 
+		'utilidad_acumulada' => $utilidad_acumulada
+	);
+	
+	return $arr_acumulada;
+}
+
+//Calcular acumulado total hasta el dia
+function calcular_acumulado_total($fecha){
+	$conexion = new ConexionBDD();
+	$fecha_mes = substr($fecha, 5, 2);
+	$fecha_anio = substr($fecha, 0, 4);
+	$fecha_inicial = $fecha_anio."-".$fecha_mes."-01";
+
+	$condicion = "fecha BETWEEN '".$fecha_inicial."' AND '".$fecha."'";
+	$sql = "SELECT SUM(venta_dia) FROM registro_venta WHERE ";
+	$venta_acumulada = $conexion->ejecutarConsulta($sql.$condicion);
+	$sql = "SELECT SUM(utilidad_dia) FROM registro_venta WHERE ";
+	$utilidad_acumulada = $conexion->ejecutarConsulta($sql.$condicion);
+
+	$arr_acumulada = array(
+		'venta_acumulada' => $venta_acumulada, 
+		'utilidad_acumulada' => $utilidad_acumulada
+	);
+	
+	return $arr_acumulada;
+}
+
+//Calcular acumulado total hasta el dia
+function calcular_dia_total($fecha){
+	$conexion = new ConexionBDD();
+
+	$condicion = "fecha = '".$fecha."'";
+	$sql = "SELECT SUM(venta_dia) FROM registro_venta WHERE ";
+	$venta_dia_total = $conexion->ejecutarConsulta($sql.$condicion);
+	$sql = "SELECT SUM(utilidad_dia) FROM registro_venta WHERE ";
+	$utilidad_dia_total = $conexion->ejecutarConsulta($sql.$condicion);
+
+	$arr_total = array(
+		'venta_dia_total' => $venta_dia_total, 
+		'utilidad_dia_total' => $utilidad_dia_total
+	);
+	
+	return $arr_total;
+}
+
+//Comprobar el numero de registros de ventas con la misma fecha
+function comprobar_num_registro($fecha){
+	$conexion = new ConexionBDD();
+	$condicion = "fecha = '".$fecha."'";
+	$sql = "SELECT COUNT(*) FROM registro_venta WHERE ".$condicion;
+	$num_registros = $conexion->ejecutarConsulta($sql);
+
+	return $num_registros;
 }
 
 //Definir estructura de reporte
@@ -701,27 +766,34 @@ function generar_reporte(){
 		$fecha_final = $_POST["fecha_final"];
 
 		//Recuperar registros de ventas
-		$condicion = "usuario = '".$usuario."' AND fecha BETWEEN '".$fecha_inicio."' AND '".$fecha_final."'";
+		$condicion = "id_usuario = '".$usuario."' AND fecha BETWEEN '".$fecha_inicio."' AND '".$fecha_final."'";
 		$sql = "SELECT * FROM registro_venta WHERE ".$condicion;
 		$datos_venta = $conexion->obtenerDatos($sql);
+		$fecha_ant = "";
 
 		foreach ($datos_venta as $data) {
 			//Extraer la fecha del valor actual
 			$fecha = $data["fecha"];
-			$fecha_dia = substr($fecha, 8, 2);
-			$fecha_mes = substr($fecha, 5, 2);
-			$fecha_anio = substr($fecha, 0, 3);
+			$fecha_dia = intval(substr($fecha, 8, 2));
+			$fecha_mes = intval(substr($fecha, 5, 2));
+			$fecha_anio = intval(substr($fecha, 0, 4));
 
-			//Mostrar la fecha del reporte
-			$fecha_calculada = mktime(NULL, NULL, NULL, $fecha_mes, $fecha_dia, $fecha_anio);
-			$fecha_calculada_valores = getdate($fecha_calculada);
-			echo "<div class='col-xs-12 text-center subtitulo_fecha'><h5>".dia($fecha_calculada_valores["wday"])." ".$fecha_calculada_valores["mday"]." de ".mes($fecha_calculada_valores["mon"])." del ".$fecha_calculada_valores["year"]."</h5></div>";
+			if($fecha != $fecha_ant){
+				//Generar numero de registros existentes con la misma fecha
+				$registro_cantidad = comprobar_num_registro($fecha);
+				$registro_actual = 0;
 
-			//Generar el contenido dependiendo la seleccion que se haya hecho
-			$opc = estructura_reporte_venta();
+				//Generar titulos de los reportes en pantalla
+				$fecha_calculada = mktime(NULL, NULL, NULL, $fecha_mes, $fecha_dia, $fecha_anio);
+				$fecha_calculada_valores = getdate($fecha_calculada);
+				echo "<div class='col-xs-12 text-center subtitulo_fecha'><h5>".dia($fecha_calculada_valores["wday"])." ".$fecha_calculada_valores["mday"]." de ".mes($fecha_calculada_valores["mon"])." del ".$fecha_calculada_valores["year"]."</h5></div>";
 
-			if($opc == 1 || $opc == 3){
-				echo "<div class='col-xs-12 col-md-1 col-sm-6 text-center titulo_venta'>
+				//Generar el contenido dependiendo la seleccion que se haya hecho
+				$opc = estructura_reporte_venta();
+
+				if($opc == 1 || $opc == 3){
+					?>
+					<div class='col-xs-12 col-md-1 col-sm-6 text-center titulo_venta'>
 						<h5 class='blanco'>Num_Emp</h5>
 					</div>
 
@@ -739,11 +811,13 @@ function generar_reporte(){
 
 					<div class='col-xs-12 col-md-3 col-sm-6 text-center titulo_venta'>
 						<h5 class='blanco'>Utilidad_acumulada</h5>
-					</div>";
-			}else{
-				if($opc != 0){
-					echo "<div class='col-xs-12 col-md-1 col-sm-6 text-center titulo_venta'>
-							<h5 class='blanco'>Total</h5>
+					</div>
+					<?php
+				}else{
+					if($opc != 0){
+						?>
+						<div class='col-xs-12 col-md-1 col-sm-6 text-center titulo_venta'>
+							<h5 class='blanco'>///</h5>
 						</div>
 
 						<div class='col-xs-12 col-md-2 col-sm-6 text-center titulo_venta'>
@@ -760,23 +834,43 @@ function generar_reporte(){
 
 						<div class='col-xs-12 col-md-3 col-sm-6 text-center titulo_venta'>
 							<h5 class='blanco'>Utilidad_acumulada</h5>
-						</div>";
+						</div>
+						<?php
 					}else{
 						//No se muestra nada debido a que no se selecciono ninguna opción de venta
 					}
-			}
+				}
 
-			foreach ($datos as $registro) {
-				echo "id_venta: ".$registro["id_venta"]."\n";
-				echo "id_usuario: ".$registro["id_usuario"]."\n";
-				echo "empleado: ".$registro["num_empleado"]."\n";
-				echo "fecha: ".$registro["fecha"]."\n";
-				$fecha = $registro["fecha"];
-				$fechaBD = date("d-m-Y", strtotime($fecha));
-				echo $fechaBD;
-				echo "venta_dia: ".$registro["venta_dia"]."\n";
-				echo "utilidad_dia: ".$registro["utilidad_dia"]."\n";
-				echo "permiso_mod: ".$registro["permiso_mod"]."\n";
+				$acumulado_emp = calcular_acumulado_empleado($data["num_empleado"]);
+
+				?>
+
+				<div class='col-xs-12 col-md-1 col-sm-6 text-center subtitulo_venta'>
+					<h5 class='blanco'><?php echo $data["num_empleado"]; ?></h5>
+				</div>
+
+				<div class='col-xs-12 col-md-2 col-sm-6 text-center subtitulo_venta'>
+					<h5 class='blanco'><?php echo $data["venta_dia"]; ?></h5>
+				</div>
+
+				<div class='col-xs-12 col-md-3 col-sm-6 text-center subtitulo_venta'>
+					<h5 class='blanco'><?php echo $acumulado_emp["venta_acumulada"]; ?></h5>
+				</div>
+
+				<div class='col-xs-12 col-md-3 col-sm-6 text-center subtitulo_venta'>
+					<h5 class='blanco'><?php echo $data["utilidad_dia"]; ?></h5>
+				</div>
+
+				<div class='col-xs-12 col-md-3 col-sm-6 text-center subtitulo_venta'>
+					<h5 class='blanco'><?php echo $data["utilidad_acumulada"]; ?></h5>
+				</div>
+
+				<?php
+				if(($opc == 2 || $opc == 3) AND $registro_actual == $registro_cantidad){
+
+				}
+
+				$fecha_ant = $fecha;
 			}
 		}
 	}else{
