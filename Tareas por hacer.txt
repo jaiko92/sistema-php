@@ -1,13 +1,13 @@
 Modificaciones del sistema PHP - Observaciones de Marilú
 -> Separar capturas y seleccionar la fecha en la captura (COMPLETADO)
 -> Mostrar notificaciones respecto a los días no registrados (COMPLETADO)
--> Desglosar por día, semana o fecha deseada la información de los reportes (progreso)
+-> Desglosar por día, semana o fecha deseada la información de los reportes (COMPLETADO)
 -> Permitir capturas en domingo (COMPLETADO)
--> Imprimir en PDF
--> Permitir seleccionar los datos a mostrar de los reportes (progreso)
+-> Imprimir en PDF (COMPLETADO)
+-> Permitir seleccionar los datos a mostrar de los reportes (COMPLETADO)
 -> Modificar el modulo de gastos(COMPLETADO)
--> Modificar el color de la meta, dependiendo si se esta debajo o encima de la misma
--> Registro de usuarios(COMPLETADO)
+-> Modificar el color de la meta, dependiendo si se esta debajo o encima de la misma (COMPLETADO)
+-> Registro de usuarios (COMPLETADO)
 -> Envio y notificaciones por correo, tanto de los reportes como de los movimientos
 -> Envio por whatsapp
 -> Registrar y capturar ayudas/manual de usuario

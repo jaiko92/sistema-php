@@ -14,10 +14,10 @@
 						</div>
 						<div class="col-xs-6 text-center titulo_elegir_mes">
 							<div class="col-xs-6">
-								<label><input type="checkbox" name="rep_empleado" id="rep_empleado" value="1"> Ventas/Utilidades totales</label>
+								<label><input type="checkbox" name="rep_empleado" id="rep_empleado" value="1"> Ventas/Utilidades por empleado</label>
 							</div>
 							<div class="col-xs-6">
-								<label><input type="checkbox" name="rep_total" id="rep_total" value="2"> Ventas/Utilidades por empleado</label>
+								<label><input type="checkbox" name="rep_total" id="rep_total" value="2"> Ventas/Utilidades por totales</label>
 							</div>
 							<div class="col-xs-6">
 								<label><input type="checkbox" name="rep_estimado" id="rep_estimado" value="1"> Estimados</label>

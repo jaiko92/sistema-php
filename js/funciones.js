@@ -87,7 +87,7 @@ $(document).ready(function(){
 		return false;
 	});//click-function
 
-	//Boton para generar los reportes en la pagina web
+	//Boton para generar los reportes en la pagina web - Operacion 7
 	$("#btn_generar_reporte").click(function(){
 		$.ajax({
 			data: $("#form_generar_reporte").serialize(),
