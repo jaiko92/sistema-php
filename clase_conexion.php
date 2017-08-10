@@ -1,12 +1,12 @@
 <?php
 
-  class ConexionBDD{
+class ConexionBDD{
     var  $usuario , $password , $pdo , $sql, $bdd,
     $reader , $consulta , $preparador , $ejecutor;
   
     function __construct(){  
       $this->usuario  = 'root';  $this->password = '';
-      $this->bdd = "projectbt";
+      $this->bdd = "reportes_new";
     }
   
     function __construct2($usuario , $password , $bdd){
@@ -127,6 +127,6 @@
   
   public function cerrarConexion() { $pdo = null ; }
   
-  }
+}
 
 ?>

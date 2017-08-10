@@ -1,10 +1,110 @@
 //Enviar petición tipo POST sin necesidad de recargar la página
 $(document).ready(function(){
 
-	//Boton para enviar y guardar las ventas/utilidades - Operacion 1
-	$("#envio_venta").click(function(){
+	//Generar facturas pendientes - Operacion 1
+	$("#btn_facturas_pendientes").click(function(){
 		$.ajax({
-			data: $("#form_envio_venta").serialize(),
+			data: $("#form_facturas_pendientes").serialize(),
+			url: 'enviar_info.php', type: 'post',
+			success: function(data) {
+				$(".contenido").html(data);
+			}//data
+		});//ajax
+		return false;
+	});//click-function
+
+	function facturas_pendientes(){
+		$.ajax({
+			data: $("#form_facturas_pendientes").serialize(),
+			url: 'enviar_info.php', type: 'post',
+			success: function(data) {
+				$(".contenido").append(data);
+			}//data
+		});//ajax
+	}
+
+	//Boton para actualizar el costeo - Operacion 2
+	$(document).on("click","#btn_actualizar_costeo",function(e){
+		$.ajax({
+			data: $(this).parent().parent().serialize(),
+			url: 'enviar_info.php', type: 'post',
+			success: function(data) {
+				$(".contenido").html(data);
+				facturas_pendientes();
+			}//data
+		});//ajax
+		return false;
+	});//click-function
+
+	//Generar facturas canceladas - Operacion 3
+	$("#btn_facturas_canceladas").click(function(){
+		$.ajax({
+			data: $("#form_facturas_canceladas").serialize(),
+			url: 'enviar_info.php', type: 'post',
+			success: function(data) {
+				$(".contenido").html(data);
+			}//data
+		});//ajax
+		return false;
+	});//click-function
+
+	//Generar autocompletado - Operación 4
+	//Generar posibles resultados para autocompletado
+	$(function(){
+		$.ajax({
+			data: {'op': 4, 'dato': "rfc"},
+			url:'enviar_info.php', type: 'post',
+			success: function(data){
+				var tags_rfc = data.split(",");
+
+				$("#buscador_rfc").autocomplete({
+					source: tags_rfc
+				});
+			}
+		});
+
+		$.ajax({
+			data: {'op': 4, 'dato': "rsocial"},
+			url:'enviar_info.php', type: 'post',
+			success: function(data){
+				var tags_rsocial = data.split(",");
+
+				$("#buscador_rsocial").autocomplete({
+					source: tags_rsocial
+				});
+			}
+		});
+
+		$.ajax({
+			data: {'op': 4, 'dato': "agente"},
+			url:'enviar_info.php', type: 'post',
+			success: function(data){
+				var tags_agente = data.split(",");
+
+				$("#buscador_agente").autocomplete({
+					source: tags_agente
+				});
+			}
+		});
+
+	});
+
+	//Generar facturas en general - Operación 5
+	$("#btn_facturas").click(function(){
+		$.ajax({
+			data: $("#form_facturas").serialize(),
+			url: 'enviar_info.php', type: 'post',
+			success: function(data) {
+				$(".contenido").html(data);
+			}//data
+		});//ajax
+		return false;
+	});//click-function
+
+	//Mostrar metas mensuales - Operación 6
+	$("#btn_mostrar_metas").click(function(){
+		$.ajax({
+			data: $("#form_mostrar_metas").serialize(),
 			url: 'enviar_info.php', type: 'post',
 			success: function(data) {
 				$(".contenido").html(data);

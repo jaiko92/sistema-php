@@ -11,7 +11,7 @@ function iniciar_sesion(){
 
 	$nom_tabla = "usuario";
 	$conexion = new ConexionBDD();
-	$sql = "SELECT * FROM ".$nom_tabla." WHERE nickname = '".$usuario."' AND password = '".$pass."'";
+	$sql = "SELECT * FROM ".$nom_tabla." WHERE usuario = '".$usuario."' AND password = '".$pass."'";
 	$bandera = $conexion->existeDato($sql);
 
 	if($bandera == true){
@@ -23,8 +23,8 @@ function iniciar_sesion(){
 		session_start();
 		$_SESSION["usuario"] = $sesion["id_usuario"];
 		$_SESSION["permiso"] = $sesion["permiso"];
-		$_SESSION["nombre"] = $sesion["nombre"];
-		$_SESSION["username"] = $sesion["nickname"];
+		$_SESSION["nombre"] = $sesion["nom_completo"];
+		$_SESSION["username"] = $sesion["usuario"];
 		$_SESSION["email"] = $sesion["correo"];
 		echo "<script language='javascript'>
 				location.href='system'
@@ -42,385 +42,139 @@ function iniciar_sesion(){
 	}
 }
 
-//Operacion 1 - Agregar venta/utilidades al sistema
-function agregar_venta(){
-	$nom_tabla = "registro_venta";
+//Operacion 1 - Generar facturas pendientes para costeo
+//Operaciones auxiliares
+//Realizar la conversión de los números en formato moneda
+function formato_moneda($dato){
+	if($dato != "N/A" && $dato != NULL){
+		$valor = "$ ".number_format($dato, 2);
+	}else{
+		$valor = "N/A";
+	}
+	return $valor;
+}
 
-	$conexion = new ConexionBDD();
-	$sql = "SELECT * FROM ".$nom_tabla." WHERE fecha='".$_POST["fecha"]."' AND num_empleado='".$_POST["empleado"]."'";
-	$bandera = $conexion->existeDato($sql);
+//Realizar la conversión de la fecha al formato dia/mes/año
+function formato_fecha($fecha){
+	if($fecha != NULL){
+		$formato = substr($fecha, 8, 2)."/".substr($fecha, 5, 2)."/".substr($fecha, 0, 4);
+		return $formato;
+	}else{
+		return NULL;
+	}
+}
 
-	$fecha_dia = intval(substr($_POST["fecha"], 8, 2));
-	$fecha_mes = intval(substr($_POST["fecha"], 5, 2));
-	$fecha_anio = intval(substr($_POST["fecha"], 0, 4));
-	$fecha_calculada = mktime(NULL, NULL, NULL, $fecha_mes, $fecha_dia, $fecha_anio);
-	$fecha_calculada_valores = getdate($fecha_calculada);
-	$val_dia = $fecha_calculada_valores["wday"];
+//Operaciones auxiliares - FIN
+function facturas_pendientes(){
+	$fecha_inicio = $_POST["fecha_inicio"];
+	$fecha_final = $_POST["fecha_final"];
+	if($fecha_inicio != "" && $fecha_final != ""){
+		$nom_tabla = "factura";
 
-	if($bandera == false AND $val_dia != 0){
-		$datos = array(
-	      array( 'fecha' , $_POST["fecha"]) , array( 'num_empleado' , $_POST["empleado"]),
-	      array( 'id_usuario' , $_POST["usuario"])
-	  	);
-
-	  	if($_POST["venta_dia"] != "" && $_POST["venta_dia"] >= 1){
-	  		array_push($datos , array( 'venta_dia' , $_POST["venta_dia"] ));
-	  	}
-
-	  	if($_POST["utilidad_dia"] != "" && $_POST["utilidad_dia"] >= 1){
-	  		array_push($datos , array( 'utilidad_dia' , $_POST["utilidad_dia"] ));
-	  	}
-
-		$bandera = $conexion->insertarDato($nom_tabla, $datos);
-		if($bandera == true){
+		$conexion = new ConexionBDD();
+		$sql = "SELECT fechaf, rfc, folio, agente, pagada, subtotal, cost, rsocial, moneda, tc FROM ".$nom_tabla." WHERE cost IS NULL AND fechaf BETWEEN '".$fecha_inicio."' AND '".$fecha_final."' ORDER BY fechaf ASC";
+		$existe_facturas = $conexion->obtenerDatos($sql);
+		if($existe_facturas == true){
+			$facturas_pendientes = $conexion->obtenerDatos($sql);
 			?>
-			<div class='alert alert-success alert-dismissible text-center' role='alert'>
-				<button type='button' class='close' data-dismiss='alert' aria-label='Close'>
-					<span aria-hidden='true'>&times;</span>
-				</button>
-				<strong>Datos guardados correctamente.</strong>
+			<div class='panel panel-primary'>
+				<div class='panel-heading'>
+					<h3 class='panel-title'>Facturas pendientes del <?php echo formato_fecha($fecha_inicio)." al ".formato_fecha($fecha_final); ?></h3>
+				</div>
+				<div class='panel-body del-padding'>
+					<div class="col-xs-12 del-padding tabla-spc">
+						<div class='col-xs-1 del-padding'><h6 class="bold">Folio</h6></div>
+						<div class='col-xs-1 del-padding'><h6 class="bold">RFC</h6></div>
+						<div class='col-xs-2 del-padding'><h6 class="bold">Razón social</h6></div>
+						<div class='col-xs-1 del-padding'><h6 class="bold">Fecha</h6></div>
+						<div class='col-xs-1 del-padding'><h6 class="bold">Agente</h6></div>
+						<div class='col-xs-1 del-padding'><h6 class="bold">Pagado</h6></div>
+						<div class='col-xs-1 del-padding'><h6 class="bold">Subtotal</h6></div>
+						<div class='col-xs-1 del-padding'><h6 class="bold">Costeo</h6></div>
+						<div class='col-xs-1 del-padding'><h6 class="bold">Moneda</h6></div>
+						<div class='col-xs-1 del-padding'><h6 class="bold">Tipo de cambio</h6></div>
+						<div class='col-xs-1 del-padding'><h6 class="bold">Actualizar</h6></div>
+					</div>
+				<?php
+				$num_pendiente = 0;
+				foreach ($facturas_pendientes as $factura) {
+				?>
+					<form method='post' id="form_actualizar_costeo_<?php echo $num_pendiente; ?>" class="col-xs-12 del-padding tabla-spc tabla-hover">
+						<div class="col-xs-1 del-padding">
+							<h6><?php echo $factura["folio"]; ?></h6>
+						</div>
+						<div class="col-xs-1 del-padding">
+							<h6><?php echo $factura["rfc"]; ?></h6>
+						</div>
+						<div class="col-xs-2 del-padding">
+							<h6><?php echo $factura["rsocial"]; ?></h6>
+						</div>
+						<div class="col-xs-1 del-padding">
+							<h6><?php echo $factura["fechaf"]; ?></h6>
+						</div>
+						<div class="col-xs-1 del-padding">
+							<h6><?php echo $factura["agente"]; ?></h6>
+						</div>
+						<div class="col-xs-1 del-padding">
+							<h6><?php echo $factura["pagada"]; ?></h6>
+						</div>
+						<div class="col-xs-1 del-padding">
+							<h6><?php echo formato_moneda($factura["subtotal"]*$factura["tc"]); ?></h6>
+						</div>
+						<div class="col-xs-1 del-padding">
+							<input type="number" name="costeo" id="costeo" class="form-control" min="0" step=".0001" placeholder="Costeo">
+						</div>
+						<div class="col-xs-1 del-padding">
+							<h6><?php echo $factura["moneda"]; ?></h6>
+						</div>
+						<div class="col-xs-1 del-padding">
+							<h6><?php echo formato_moneda($factura["tc"]); ?></h6>
+						</div>
+						<div class="col-xs-1 del-padding btn-spc">
+							<button id="btn_actualizar_costeo" class="btn btn-primary btn-sm">Actualizar</button>
+						</div>
+					</form>
+				<?php
+					$num_pendiente++;
+				}
+				unset($_POST);
+				?>
+				</div>
 			</div>
-			<?php
+		<?php
 		}else{
-			?>
+		?>
 			<div class='alert alert-danger alert-dismissible text-center' role='alert'>
 				<button type='button' class='close' data-dismiss='alert' aria-label='Close'>
 					<span aria-hidden='true'>&times;</span>
 				</button>
-				<strong>No se pudo guardar el registro, intentelo más tarde.</strong>
+				<strong>No existen facturas pendientes en la fecha seleccionada.</strong>
 			</div>
-			<?php
+		<?php
 		}
 	}else{
-		?>
+	?>
 		<div class='alert alert-warning alert-dismissible text-center' role='alert'>
 			<button type='button' class='close' data-dismiss='alert' aria-label='Close'>
 				<span aria-hidden='true'>&times;</span>
 			</button>
-			<strong>No se pudo guardar el registro, intente con otra fecha y/o empleado.</strong>
+			<strong>Por favor seleccione una fecha.</strong>
 		</div>
-		<?php
+	<?php
 	}
-	$conexion->cerrarConexion();
+		
 }
-//!--Operacion 1 - FIN
+//Operación 1 - FIN
 
-//Operacion 2 - Agregar gastos al sistema
-function agregar_gastos(){
-	$nom_tabla = "registro_gasto";
-
-	$conexion = new ConexionBDD();
-	$sql = "SELECT * FROM ".$nom_tabla." WHERE fecha='".$_POST["fecha"]."'";
-	$bandera = $conexion->existeDato($sql);
-
-	$fecha_dia = intval(substr($_POST["fecha"], 8, 2));
-	$fecha_mes = intval(substr($_POST["fecha"], 5, 2));
-	$fecha_anio = intval(substr($_POST["fecha"], 0, 4));
-	$fecha_calculada = mktime(NULL, NULL, NULL, $fecha_mes, $fecha_dia, $fecha_anio);
-	$fecha_calculada_valores = getdate($fecha_calculada);
-	$val_dia = $fecha_calculada_valores["wday"];
-
-	if($bandera == false AND $val_dia != 0){
-		$datos = array(
-	      array( 'fecha' , $_POST["fecha"]) , array( 'id_usuario' , $_POST["usuario"])
-	  	);
-
-	  	if($_POST["gasto_real_dia"] != ""){
-	  		array_push($datos , array( 'gasto_real_dia' , $_POST["gasto_real_dia"] ));
-	  	}
-
-	  	if($_POST["gasto_estimado_dia"] != ""){
-	  		array_push($datos , array( 'gasto_estimado_dia' , $_POST["gasto_estimado_dia"] ));
-	  	}
-
-		$bandera = $conexion->insertarDato($nom_tabla, $datos);
-		if($bandera == true){
-			?>
-			<div class='alert alert-success alert-dismissible text-center' role='alert'>
-				<button type='button' class='close' data-dismiss='alert' aria-label='Close'>
-					<span aria-hidden='true'>&times;</span>
-				</button>
-				<strong>Datos guardados correctamente.</strong>
-			</div>
-			<?php
-		}else{
-			?>
-			<div class='alert alert-danger alert-dismissible text-center' role='alert'>
-				<button type='button' class='close' data-dismiss='alert' aria-label='Close'>
-					<span aria-hidden='true'>&times;</span>
-				</button>
-				<strong>No se pudo guardar el registro, intentelo más tarde.</strong>
-			</div>
-			<?php
-		}
-	}else{
-		?>
-		<div class='alert alert-warning alert-dismissible text-center' role='alert'>
-			<button type='button' class='close' data-dismiss='alert' aria-label='Close'>
-				<span aria-hidden='true'>&times;</span>
-			</button>
-			<strong>No se pudo guardar el registro, intente con otra fecha.</strong>
-		</div>
-		<?php
-	}
-	$conexion->cerrarConexion();
-}
-//!--Operacion 2 - FIN
-
-//Operacion 3 - Visualización de pendientes
-//Recuperar de la BDD los registros de ventas/utilidades pendientes
-function recuperar_ventas_utilidades_pendientes($usuario){
-	$conexion = new ConexionBDD();
-	$columnasVenUti = "id_venta, num_empleado, fecha";
-	$sql = "SELECT ".$columnasVenUti." FROM registro_venta WHERE id_usuario = ".$usuario." AND venta_dia IS NULL AND utilidad_dia IS NULL";
-	$datosVenUti = $conexion->obtenerDatos($sql);
-	$conexion->cerrarConexion();
-	return $datosVenUti;
-}
-
-//Recuperar de la BDD los registros de solo ventas pendientes
-function recuperar_ventas_pendientes($usuario){
-	$conexion = new ConexionBDD();
-	$columnasVenta = "id_venta, num_empleado, fecha, utilidad_dia";
-	$sql = "SELECT ".$columnasVenta." FROM registro_venta WHERE id_usuario = ".$usuario." AND venta_dia IS NULL AND utilidad_dia IS NOT NULL";
-	$datosVenta = $conexion->obtenerDatos($sql);
-	$conexion->cerrarConexion();
-	return $datosVenta;
-}
-
-//Recuperar de la BDD los registros de solo utilidades pendientes
-function recuperar_utilidades_pendientes($usuario){
-	$conexion = new ConexionBDD();
-	$columnasUtilidad = "id_venta, num_empleado, fecha, venta_dia";
-	$sql = "SELECT ".$columnasUtilidad." FROM registro_venta WHERE id_usuario = ".$usuario." AND venta_dia IS NOT NULL AND utilidad_dia IS NULL";
-	$datosUtilidad = $conexion->obtenerDatos($sql);
-	$conexion->cerrarConexion();
-	return $datosUtilidad;
-}
-
-//Recuperar de la BDD los registros de gastos pendientes
-function recuperar_gastos_pendientes($usuario){
-	$conexion = new ConexionBDD();
-	$columnasGasto = "id_gasto, fecha, gasto_real_dia, gasto_estimado_dia";
-	$sql = "SELECT ".$columnasGasto." FROM registro_gasto WHERE id_usuario = ".$usuario." AND (gasto_real_dia IS NULL OR gasto_estimado_dia IS NULL)";
-	$datosGasto = $conexion->obtenerDatos($sql);
-	$conexion->cerrarConexion();
-	return $datosGasto;
-}
-
-//Generar los datos deseados
-function mostrar_pendientes($usuario){
-//Recuperar ventas y utilidades pendientes
-	$num_pendientes = 0;
-	if(isset($_POST["pen_venta_utilidad"])){
-		$datos = recuperar_ventas_utilidades_pendientes($usuario);
-		?>
-		<div class='panel panel-primary'>
-			<div class='panel-heading'>
-				<h3 class='panel-title'>Ventas y utilidades pendientes</h3>
-			</div>
-			<div class='panel-body'>
-				<div class='form-inline'>
-					<div class='col-xs-2 form_espacio'><h4>Fecha</h4></div>
-					<div class='col-xs-2 form_espacio'><h4># Empleado</h4></div>
-					<div class='col-xs-3 form_espacio'><h4>Venta</h4></div>
-					<div class='col-xs-3 form_espacio'><h4>Utilidad</h4></div>
-					<div class='col-xs-2 form_espacio'><h4>Aceptar</h4></div>
-		<?php
-		foreach ($datos as $data) {
-			$num_pendientes++;
-			$fechaBD = date("d-m-Y", strtotime($data["fecha"]));
-				?>
-				<form method='post' id='form_actualizar_pendiente_<?php echo $num_pendientes; ?>'>
-					<input type='hidden' name='op' id='op' value='4'>
-					<input type='hidden' name='id_venta' id='id_venta' value='<?php echo $data["id_venta"]; ?>'>
-					<input type='hidden' name='usuario' id='usuario' value='<?php echo $usuario; ?>'>
-					<input type='hidden' name='tabla' id='tabla' value='registro_venta'>
-					<div class='col-xs-2 form_espacio'><?php echo $fechaBD; ?></div>
-					<div class='col-xs-2 form_espacio'><?php echo $data["num_empleado"]; ?></div>
-					<div class='col-xs-3 form_espacio'>
-						<input type='number' class='form-control' id='venta_dia' name='venta_dia' step='.01' min='0'>
-					</div>
-					<div class='col-xs-3 form_espacio'>
-						<input type='number' class='form-control' id='utilidad_dia' name='utilidad_dia' step='.01' min='0'>
-					</div>
-					<div class='col-xs-2 form_espacio'>
-						<input type='hidden' name='num_pendiente' id='num_pendiente' value='<?php echo $num_pendientes; ?>'>
-						<input type='submit' value='Enviar' id='actualizar_pendiente' class='btn_envio btn btn-primary'>
-					</div>
-				</form>
-				<?php
-		}
-			echo "	</div>
-				</div>
-			  </div>";
-	}
-
-//Recuperar solo ventas pendientes
-	if(isset($_POST["pen_venta"])){
-		$datos = recuperar_ventas_pendientes($usuario);
-		?>
-		<div class='panel panel-primary'>
-			<div class='panel-heading'>
-				<h3 class='panel-title'>Sólo ventas pendientes</h3>
-			</div>
-			<div class='panel-body'>
-				<div class='form-inline'>
-					<div class='col-xs-2 form_espacio'><h4>Fecha</h4></div>
-					<div class='col-xs-2 form_espacio'><h4># Empleado</h4></div>
-					<div class='col-xs-3 form_espacio'><h4>Venta</h4></div>
-					<div class='col-xs-3 form_espacio'><h4>Utilidad</h4></div>
-					<div class='col-xs-2 form_espacio'><h4>Aceptar</h4></div>
-		<?php
-		foreach ($datos as $data) {
-			$num_pendientes++;
-			$fechaBD = date("d-m-Y", strtotime($data["fecha"]));
-			?>
-					<form method='post' id='form_actualizar_pendiente_<?php echo $num_pendientes; ?>'>
-						<input type='hidden' name='op' id='op' value='4'>
-						<input type='hidden' name='id_venta' id='id_venta' value='<?php echo $data["id_venta"]; ?>'>
-						<input type='hidden' name='usuario' id='usuario' value='<?php echo $usuario; ?>'>
-						<input type='hidden' name='tabla' id='tabla' value='registro_venta'>
-						<div class='col-xs-2 form_espacio'><?php echo $fechaBD; ?></div>
-						<div class='col-xs-2 form_espacio'><?php echo $data["num_empleado"]; ?></div>
-						<div class='col-xs-3 form_espacio'>
-							<input type='number' class='form-control' id='venta_dia' name='venta_dia' step='.01' min='0'>
-						</div>
-						<div class='col-xs-3 form_espacio'><?php echo $data["utilidad_dia"]; ?></div>
-						<div class='col-xs-2 form_espacio'>
-							<input type='hidden' name='num_pendiente' id='num_pendiente' value='<?php echo $num_pendientes; ?>'>
-							<input type='submit' value='Enviar' id='actualizar_pendiente' class='btn_envio btn btn-primary'>
-						</div>
-					</form>
-			<?php
-		}
-		?>
-				</div>
-			</div>
-		</div>
-		<?php
-	}
-
-//Recuperar solo utilidades pendientes
-	if(isset($_POST["pen_utilidad"])){
-		$datos = recuperar_utilidades_pendientes($usuario);
-		?>
-		<div class='panel panel-primary'>
-			<div class='panel-heading'>
-				<h3 class='panel-title'>Sólo utilidades pendientes</h3>
-			</div>
-			<div class='panel-body'>
-				<div class='form-inline'>
-					<div class='col-xs-2 form_espacio'><h4>Fecha</h4></div>
-					<div class='col-xs-2 form_espacio'><h4># Empleado</h4></div>
-					<div class='col-xs-3 form_espacio'><h4>Venta</h4></div>
-					<div class='col-xs-3 form_espacio'><h4>Utilidad</h4></div>
-					<div class='col-xs-2 form_espacio'><h4>Aceptar</h4></div>
-		<?php
-		foreach ($datos as $data) {
-				$num_pendientes++;
-				$fechaBD = date("d-m-Y", strtotime($data["fecha"]));
-				?>
-					<form method='post' id='form_actualizar_pendiente_<?php echo $num_pendientes; ?>'>
-						<input type='hidden' name='op' id='op' value='4'>
-						<input type='hidden' name='id_venta' id='id_venta' value='<?php echo $data["id_venta"]; ?>'>
-						<input type='hidden' name='usuario' id='usuario' value='<?php echo $usuario; ?>'>
-						<input type='hidden' name='tabla' id='tabla' value='registro_venta'>
-						<div class='col-xs-2 form_espacio'><?php echo $fechaBD; ?></div>
-						<div class='col-xs-2 form_espacio'><?php echo $data["num_empleado"]; ?></div>
-						<div class='col-xs-3 form_espacio'><?php echo $data["venta_dia"]; ?></div>
-						<div class='col-xs-3 form_espacio'>
-							<input type='number' class='form-control' id='utilidad_dia' name='utilidad_dia' step='.01' min='0'>
-						</div>
-						<div class='col-xs-2 form_espacio'>
-							<input type='hidden' name='num_pendiente' id='num_pendiente' value='<?php echo $num_pendientes; ?>'>
-							<input type='submit' value='Enviar' id='actualizar_pendiente' class='btn_envio btn btn-primary'>
-						</div>
-					</form>
-				<?php
-		}
-		?>
-				</div>
-			</div>
-		</div>
-		<?php
-	}
-
-//Recuperar gastos pendientes
-	if(isset($_POST["pen_gastos"])){
-		$datos = recuperar_gastos_pendientes($usuario);
-		?>
-		<div class='panel panel-danger'>
-			<div class='panel-heading'>
-				<h3 class='panel-title'>Gastos pendientes</h3>
-			</div>
-			<div class='panel-body'>
-				<div class='form-inline'>
-					<div class='col-xs-3 form_espacio'><h4>Fecha</h4></div>
-					<div class='col-xs-3 form_espacio'><h4>Gasto real</h4></div>
-					<div class='col-xs-3 form_espacio'><h4>Gasto estimado</h4></div>
-					<div class='col-xs-3 form_espacio'><h4>Aceptar</h4></div>
-		<?php
-		foreach ($datos as $data) {
-			$num_pendientes++;
-			$fechaBD = date("d-m-Y", strtotime($data["fecha"]));
-				?>
-				<form method='post' id='form_actualizar_pendiente_<?php echo $num_pendientes; ?>'>
-					<input type='hidden' name='op' id='op' value='4'>
-					<input type='hidden' name='id_gasto' id='id_gasto' value='<?php echo $data["id_gasto"]; ?>'>
-					<input type='hidden' name='usuario' id='usuario' value='<?php echo $usuario; ?>'>
-					<input type='hidden' name='tabla' id='tabla' value='registro_gasto'>
-					<div class='col-xs-3 form_espacio'><?php echo $fechaBD; ?></div>
-					<div class='col-xs-3 form_espacio'>
-				<?php
-					if($data["gasto_real_dia"] != NULL){
-			echo 		$data["gasto_real_dia"];
-					}else{
-			echo "		<input type='number' class='form-control' id='gasto_real_dia' name='gasto_real_dia' step='.01' min='0'>";
-					}
-					echo "</div>
-					<div class='col-xs-3 form_espacio'>";
-
-					if($data["gasto_estimado_dia"] != NULL){
-			echo 		$data["gasto_estimado_dia"];
-					}else{
-			echo "		<input type='number' class='form-control' id='gasto_estimado_dia' name='gasto_estimado_dia' step='.01' min='0'>";
-					}
-					echo "</div>";
-
-		echo "		<div class='col-xs-3 form_espacio'><input type='hidden' name='num_pendiente' id='num_pendiente' value='".$num_pendientes."'><input type='submit' value='Enviar' id='actualizar_pendiente' class='btn_envio btn btn-danger'></div>
-					</form>";
-		}
-		echo "	</div>
-			</div>
-		  </div>";
-	}
-}
-//!--Operacion 3 - FIN
-
-//Operacion 4 - Actualizacion de pendientes
-function actualizar_pendientes(){
+//Operacion 2 - Actualizar costeo manualmente
+function actualizar_costeo(){
 	$conexion = new ConexionBDD();
 
-	$tabla = $_POST["tabla"];
-	$datos = array();
-	if($tabla == "registro_venta"){
-		if(isset($_POST["venta_dia"]) && $_POST["venta_dia"] != ""){
-			array_push($datos , array( 'venta_dia' , $_POST["venta_dia"]));
-		}
-		if(isset($_POST["utilidad_dia"]) && $_POST["utilidad_dia"] != ""){
-			array_push($datos , array( 'utilidad_dia' , $_POST["utilidad_dia"]));
-		}
-		$sql = " id_venta = ".$_POST["id_venta"];
-	}else{
-		if(isset($_POST["gasto_real_dia"]) && $_POST["gasto_real_dia"] != ""){
-			array_push($datos , array( 'gasto_real_dia' , $_POST["gasto_real_dia"]));
-		}
-		if(isset($_POST["gasto_estimado_dia"]) && $_POST["gasto_estimado_dia"] != ""){
-			array_push($datos , array( 'gasto_estimado_dia' , $_POST["gasto_estimado_dia"]));
-		}
-		$sql = "id_gasto = ".$_POST["id_gasto"];
-	}
+	$tabla = "factura";
+	$datos = array(
+		array( "cost" , $_POST["costeo"])
+	);
+	$sql = "folio = ".$_POST["folio"];
 	$conexion->actualizarDato($tabla, $datos, $sql);
 	?>
 	<div class='alert alert-success alert-dismissible text-center' role='alert'>
@@ -429,157 +183,285 @@ function actualizar_pendientes(){
 		</button>
 		<strong>Datos actualizados correctamente.</strong>
 	</div>
-	<?php
-	mostrar_pendientes($_POST["usuario"]);
-	unset($_POST);
-
-	$conexion->cerrarConexion();
+<?php
 }
-//!--Operacion 4 - FIN
+//Operación 2 - FIN
 
-//Operacion 5 - Mostrar los datos del usuario actual
-//Convertir numero de permiso al puesto correspondiente
-function puesto($permiso){
-	switch ($permiso) {
-		case '0':
-			$puesto = "Administrador";
-			break;
-		
-		case '1':
-			$puesto = "Ventas";
-			break;
-		
-		case '2':
-			$puesto = "Compras";
-			break;
-		
-		default:
-			echo "Error grave de sistema! Comunicarse con el administrador";
-			break;
-	}
+//Operación 3 - Generar facturas canceladas
+function facturas_canceladas(){
+	$fecha_inicio = $_POST["fecha_inicio"];
+	$fecha_final = $_POST["fecha_final"];
+	if($fecha_inicio != "" && $fecha_final != ""){
+		$nom_tabla = "factura";
 
-	return $puesto;
-}
-
-//Obtener los datos de un usuario
-function mostrar_usuario($usuario){
-	$conexion = new ConexionBDD();
-	$sql = "SELECT * FROM usuario WHERE id_usuario = '".$usuario."'";
-	$datos = $conexion->obtenerDatos($sql);
-	foreach ($datos as $tmp) {
-		$data = $tmp;
-	}
-	?>
-	<div class='col-md-4 col-md-offset-4 text-center container-xs-vertical'>
-		<div class='panel panel-default container-xs-vertical'>
-			<div class='panel-heading'>
-				<h2 class='panel-title'><? php echo $data["nombre"]." ".$data["apellido"]; ?></h2>
-			</div>
-			<div class='panel-body'>
-				<label for='nickname'>Nombre de usuario: </label>
-				<input type='text' name='nickname' class='form-control' id='nickname' value='<?php echo $data["nickname"]; ?>' readonly>
-				<label for='email'>Correo electronico: </label>
-				<input type='email' name='email' class='form-control' id='email' value='<?php echo $data["correo"]; ?>' readonly>
-				<label for='posicion'>Posición: </label>
-				<input type='text' name='posicion' class='form-control' id='posicion' value='<?php echo puesto($data["permiso"]); ?>' readonly>
-				<div class='btn-espacio'>
-					<button type='button' class='btn btn-primary' data-toggle='modal' data-target='#editar_info'>Editar información</button>	
+		$conexion = new ConexionBDD();
+		$sql = "SELECT fechaf, rfc, folio, agente, pagada, subtotal, cost, rsocial, moneda, tc FROM ".$nom_tabla." WHERE subtotal = 0 AND fechaf BETWEEN '".$fecha_inicio."' AND '".$fecha_final."' ORDER BY fechaf ASC";
+		$existe_facturas = $conexion->existeDato($sql);
+		if($existe_facturas == true){
+			$facturas_pendientes = $conexion->obtenerDatos($sql);
+			?>
+			<div class='panel panel-primary'>
+				<div class='panel-heading'>
+					<h3 class='panel-title'>Facturas canceladas del <?php echo formato_fecha($fecha_inicio)." al ".formato_fecha($fecha_final); ?></h3>
+				</div>
+				<div class='panel-body del-padding'>
+					<div class="col-xs-12 del-padding tabla-spc">
+						<div class='col-xs-1 del-padding'><h6 class="bold">Folio</h6></div>
+						<div class='col-xs-1 del-padding'><h6 class="bold">RFC</h6></div>
+						<div class='col-xs-3 del-padding'><h6 class="bold">Razón social</h6></div>
+						<div class='col-xs-1 del-padding'><h6 class="bold">Fecha</h6></div>
+						<div class='col-xs-1 del-padding'><h6 class="bold">Agente</h6></div>
+						<div class='col-xs-1 del-padding'><h6 class="bold">Pagado</h6></div>
+						<div class='col-xs-1 del-padding'><h6 class="bold">Subtotal</h6></div>
+						<div class='col-xs-1 del-padding'><h6 class="bold">Costeo</h6></div>
+						<div class='col-xs-1 del-padding'><h6 class="bold">Moneda</h6></div>
+						<div class='col-xs-1 del-padding'><h6 class="bold">Tipo de cambio</h6></div>
+					</div>
+				<?php
+				$num_pendiente = 0;
+				foreach ($facturas_pendientes as $factura) {
+				?>
+					<form method='post' id="form_actualizar_cancelada_<?php echo $num_pendiente; ?>" class="col-xs-12 del-padding tabla-spc tabla-hover">
+						<div class="col-xs-1 del-padding">
+							<h6><?php echo $factura["folio"]; ?></h6>
+						</div>
+						<div class="col-xs-1 del-padding">
+							<h6><?php echo $factura["rfc"]; ?></h6>
+						</div>
+						<div class="col-xs-3 del-padding">
+							<h6><?php echo $factura["rsocial"]; ?></h6>
+						</div>
+						<div class="col-xs-1 del-padding">
+							<h6><?php echo $factura["fechaf"]; ?></h6>
+						</div>
+						<div class="col-xs-1 del-padding">
+							<h6><?php echo $factura["agente"]; ?></h6>
+						</div>
+						<div class="col-xs-1 del-padding">
+							<h6><?php echo $factura["pagada"]; ?></h6>
+						</div>
+						<div class="col-xs-1 del-padding">
+							<h6><?php echo formato_moneda($factura["subtotal"]*$factura["tc"]); ?></h6>
+						</div>
+						<div class="col-xs-1 del-padding">
+							<h6><?php echo formato_moneda($factura["cost"]*$factura["tc"]); ?></h6>
+						</div>
+						<div class="col-xs-1 del-padding">
+							<h6><?php echo $factura["moneda"]; ?></h6>
+						</div>
+						<div class="col-xs-1 del-padding">
+							<h6><?php echo formato_moneda($factura["tc"]); ?></h6>
+						</div>
+					</form>
+				<?php
+					$num_pendiente++;
+				}
+				unset($_POST);
+				?>
 				</div>
 			</div>
-		</div>
-	</div>
-	<?php
-	$conexion->cerrarConexion();
-}
-//!--Operacion 5 - FIN
-
-//Operacion 6 - Actualizar los datos del usuario actual
-function comprobar_igualdad($cadena1, $cadena2){
-	if($cadena1 == $cadena2){
-		return true;
-	}else{
-		return false;
-	}
-}
-
-function editar_usuario(){
-	$conexion = new ConexionBDD();
-	$nom_tabla = "usuario";
-	$pass = $_POST["old_pass"];
-	$usuario = $_POST["user"];
-	$condicion = "id_usuario = '".$usuario."' AND password = '".$pass."'";
-	$sql = "SELECT * FROM ".$nom_tabla." WHERE ".$condicion;
-	//echo $sql;
-	$bandera = $conexion->existeDato($sql);
-	if($bandera == true){
-		$bandera = comprobar_igualdad($_POST["new_pass"], $_POST["new_pass2"]);
-		if($bandera == true){
-			$datos = array( 
-				array( 'nickname', $_POST["username"] ) , array( 'correo' , $_POST["email"] ) , array( 'password' , $_POST["new_pass"] )
-			);
-			session_start();
-			$_SESSION["username"] = $_POST["username"];
-			$_SESSION["email"] = $_POST["email"];
-			$user = $_SESSION["username"];
-			$email = $_SESSION["email"];
-			$conexion->actualizarDato($nom_tabla, $datos, $condicion);
-			?>
-			<script language='javascript'>
-				var pagina='system'
-				function redireccionar()
-				{
-					location.href=pagina
-				}
-				alert('Datos actualizados correctamente');
-				setTimeout ('redireccionar()', 5);
-			</script>
-			<?php
+		<?php
 		}else{
-			?>
-			<div class='alert alert-warning alert-dismissible text-center' role='alert'>
+		?>
+			<div class='alert alert-danger alert-dismissible text-center' role='alert'>
 				<button type='button' class='close' data-dismiss='alert' aria-label='Close'>
 					<span aria-hidden='true'>&times;</span>
 				</button>
-				<strong>Escriba la nueva contraseña en ambos campos.</strong>
+				<strong>No existen facturas canceladas en la fecha seleccionada.</strong>
 			</div>
-			<?php
+		<?php
 		}
 	}else{
-		?>
-		<br><div class='alert alert-danger alert-dismissible text-center' role='alert'>
+	?>
+		<div class='alert alert-warning alert-dismissible text-center' role='alert'>
 			<button type='button' class='close' data-dismiss='alert' aria-label='Close'>
 				<span aria-hidden='true'>&times;</span>
 			</button>
-			<strong>Ingrese la contraseña correcta.</strong>
+			<strong>Por favor seleccione una fecha.</strong>
 		</div>
 	<?php
 	}
+		
 }
-//!--Operacion 6 -FIN
+//Operación 3 - FIN
 
-//Operacion 7 - Generar reporte en la página
-//Obtener el nombre del dia
-function dia($num_dia){
-	switch ($num_dia) {
-		case '0': $nom_dia = "Domingo"; break;
-		
-		case '1': $nom_dia = "Lunes"; break;
-		
-		case '2': $nom_dia = "Martes"; break;
-		
-		case '3': $nom_dia = "Miercoles"; break;
-		
-		case '4': $nom_dia = "Jueves"; break;
-		
-		case '5': $nom_dia = "Viernes"; break;
-		
-		case '6': $nom_dia = "Sabado"; break;
-		
-		default: echo "ERROR GRAVE, CIERRE EL PROGRAMA POR FAVOR"; break;
+//Operación 4 - Generar autocompletado
+function autocompletado(){
+	$dato = $_POST["dato"];
+	$nom_tabla = "factura";
+
+	$conexion = new ConexionBDD();
+	$sql = "SELECT DISTINCT(".$dato.") FROM ".$nom_tabla." WHERE ".$dato." IS NOT NULL";
+	$datos_autocompletado = $conexion->obtenerDatos($sql);
+	$cadena_valores = "";
+	foreach($datos_autocompletado as $valor){
+		$cadena_valores = $cadena_valores.$valor[$dato].',';
 	}
-	return $nom_dia;
+	echo $cadena_valores;
 }
+//Operación 4 - FIN
 
+//Operacion 5 - Generar facturas en general
+function facturas_general(){
+	$fecha_inicio = $_POST["fecha_inicio"];
+	$fecha_final = $_POST["fecha_final"];
+	$rfc = $_POST["rfc"];
+	$rsocial = $_POST["razon_social"];
+	$folio = $_POST["folio"];
+	$agente = $_POST["agente"];
+	$nom_tabla = "factura";
+	$bandera_fecha = false;
+
+	$conexion = new ConexionBDD();
+	$sql = "SELECT fechaf, rfc, folio, agente, pagada, subtotal, cost, rsocial, moneda, tc FROM ".$nom_tabla;
+
+	if($fecha_inicio != "" || $fecha_final != "" || $rfc != "" || $rsocial != "" || $folio != "" || $agente != ""){
+		$sql = $sql." WHERE";
+		$bandera = false;
+	}
+
+	if($fecha_inicio != "" && $fecha_final != ""){
+		$sql = $sql." fechaf BETWEEN '".$fecha_inicio."' AND '".$fecha_final."'";
+		$bandera_fecha = true;
+		$bandera = true;
+		if($rfc != ""){
+			if($bandera == true){
+				$sql = $sql." AND";
+			}else{
+				$bandera == true;
+			}
+			$sql = $sql." rfc LIKE '%".$rfc."%'";
+		}
+		
+		if($rsocial != ""){
+			if($bandera == true){
+				$sql = $sql." AND";
+			}else{
+				$bandera == true;
+			}
+			$sql = $sql." rsocial LIKE '%".$rsocial."%'";
+		}
+
+		if($folio != ""){
+			if($bandera == true){
+				$sql = $sql." AND";
+			}else{
+				$bandera == true;
+			}
+			$sql = $sql." folio = ".$folio;
+		}
+
+		if($agente != ""){
+			if($bandera == true){
+				$sql = $sql." AND";
+			}else{
+				$bandera == true;
+			}
+			$sql = $sql." agente LIKE '%".$agente."%'";
+		}
+
+		$sql = $sql." ORDER BY fechaf ASC";
+		$existe_facturas = $conexion->existeDato($sql);
+		if($existe_facturas == true){
+			$facturas_pendientes = $conexion->obtenerDatos($sql);
+			?>
+			<div class='panel panel-primary'>
+				<div class='panel-heading'>
+				<?php
+				if($bandera_fecha == true){
+				?>
+				<h3 class='panel-title'>Facturas del <?php echo formato_fecha($fecha_inicio)." al ".formato_fecha($fecha_final); ?></h3>
+				<?php
+				}else{
+				?>
+				<h3 class='panel-title'>Facturas</h3>
+				<?php
+				}
+				?>
+				</div>
+				<div class='panel-body del-padding'>
+					<div class="col-xs-12 del-padding tabla-spc">
+						<div class='col-xs-1 del-padding'><h6 class="bold">Folio</h6></div>
+						<div class='col-xs-1 del-padding'><h6 class="bold">RFC</h6></div>
+						<div class='col-xs-3 del-padding'><h6 class="bold">Razón social</h6></div>
+						<div class='col-xs-1 del-padding'><h6 class="bold">Fecha</h6></div>
+						<div class='col-xs-1 del-padding'><h6 class="bold">Agente</h6></div>
+						<div class='col-xs-1 del-padding'><h6 class="bold">Pagado</h6></div>
+						<div class='col-xs-1 del-padding'><h6 class="bold">Subtotal</h6></div>
+						<div class='col-xs-1 del-padding'><h6 class="bold">Costeo</h6></div>
+						<div class='col-xs-1 del-padding'><h6 class="bold">Moneda</h6></div>
+						<div class='col-xs-1 del-padding'><h6 class="bold">Tipo de cambio</h6></div>
+					</div>
+				<?php
+				$num_factura = 0;
+				foreach ($facturas_pendientes as $factura) {
+				?>
+					<form method='post' id="form_actualizar_cancelada_<?php echo $num_factura; ?>" class="col-xs-12 del-padding tabla-spc tabla-hover">
+						<div class="col-xs-1 del-padding">
+							<h6><?php echo $factura["folio"]; ?></h6>
+						</div>
+						<div class="col-xs-1 del-padding">
+							<h6><?php echo $factura["rfc"]; ?></h6>
+						</div>
+						<div class="col-xs-3 del-padding">
+							<h6><?php echo $factura["rsocial"]; ?></h6>
+						</div>
+						<div class="col-xs-1 del-padding">
+							<h6><?php echo $factura["fechaf"]; ?></h6>
+						</div>
+						<div class="col-xs-1 del-padding">
+							<h6><?php echo $factura["agente"]; ?></h6>
+						</div>
+						<div class="col-xs-1 del-padding">
+							<h6><?php echo $factura["pagada"]; ?></h6>
+						</div>
+						<div class="col-xs-1 del-padding">
+							<h6><?php echo formato_moneda($factura["subtotal"]*$factura["tc"]); ?></h6>
+						</div>
+						<div class="col-xs-1 del-padding">
+							<h6><?php echo formato_moneda($factura["cost"]*$factura["tc"]); ?></h6>
+						</div>
+						<div class="col-xs-1 del-padding">
+							<h6><?php echo $factura["moneda"]; ?></h6>
+						</div>
+						<div class="col-xs-1 del-padding">
+							<h6><?php echo formato_moneda($factura["tc"]); ?></h6>
+						</div>
+					</form>
+				<?php
+					$num_factura++;
+				}
+				unset($_POST);
+				?>
+				</div>
+			</div>
+		<?php
+		}else{
+		?>
+			<div class='alert alert-danger alert-dismissible text-center' role='alert'>
+				<button type='button' class='close' data-dismiss='alert' aria-label='Close'>
+					<span aria-hidden='true'>&times;</span>
+				</button>
+				<strong>No existen facturas con los datos seleccionados.</strong>
+			</div>
+		<?php
+		}
+	}else{
+	?>
+		<div class='alert alert-danger alert-dismissible text-center' role='alert'>
+			<button type='button' class='close' data-dismiss='alert' aria-label='Close'>
+				<span aria-hidden='true'>&times;</span>
+			</button>
+			<strong>Por favor seleccione una fecha, es imposible cargar tantos datos al mismo tiempo.</strong>
+		</div>
+	<?php
+	}
+
+		
+}
+//Operación 5 - FIN
+
+//Operacion 6 - Generar facturas en general
 //Obtener el nombre del mes
 function mes($num_mes){
 	switch ($num_mes) {
@@ -611,6 +493,91 @@ function mes($num_mes){
 	}
 
 	return $nom_mes;
+}
+
+function generar_metas_mensuales(){
+	$fecha_inicio = $_POST["fecha_inicio"]."-01";
+	$fecha_final = $_POST["fecha_final"]."-01";
+
+	if($fecha_inicio != "" && $fecha_final != ""){
+		$nom_tabla = "meta_mensual";
+
+		$conexion = new ConexionBDD();
+		$sql = "SELECT * FROM ".$nom_tabla." WHERE mes BETWEEN '".$fecha_inicio."' AND '".$fecha_final."' ORDER BY mes ASC";
+		$existe_facturas = $conexion->existeDato($sql);
+		if($existe_facturas == true){
+			$metas_mensuales = $conexion->obtenerDatos($sql);
+			foreach ($metas_mensuales as $meta){
+			?>
+			<div class="col-xs-4 text-center">
+				<div class='panel panel-primary'>
+					<div class='panel-heading'>
+						<h3 class='panel-title'><?php echo mes(substr($meta["mes"], 5, 2))." del ".substr($meta["mes"], 0, 4); ?></h3>
+					</div>
+					<div class='panel-body del-padding'>
+						<div class="col-xs-12 del-padding tabla-spc">
+							<div class='col-xs-6 del-padding'><h6 class="bold">Meta mensual</h6></div>
+							<div class='col-xs-6 del-padding'><h6 class="bold">Porcentaje de Utilidad</h6></div>
+						</div>
+
+						<div class="col-xs-6 del-padding">
+							<h6><?php echo formato_moneda($meta["valor_meta"]); ?></h6>
+						</div>
+						<div class="col-xs-6 del-padding">
+							<h6><?php echo $meta["porcentaje_utilidad"]." %"; ?></h6>
+						</div>
+					</div>
+				</div>
+			</div>
+			<?php
+			}
+			unset($_POST);
+		}else{
+		?>
+			<div class='alert alert-danger alert-dismissible text-center' role='alert'>
+				<button type='button' class='close' data-dismiss='alert' aria-label='Close'>
+					<span aria-hidden='true'>&times;</span>
+				</button>
+				<strong>No existen metas con las fechas seleccionadas.</strong>
+			</div>
+		<?php
+		}
+	}else{
+	?>
+		<div class='alert alert-warning alert-dismissible text-center' role='alert'>
+			<button type='button' class='close' data-dismiss='alert' aria-label='Close'>
+				<span aria-hidden='true'>&times;</span>
+			</button>
+			<strong>Por favor seleccione una fecha.</strong>
+		</div>
+	<?php
+	}
+
+		
+}
+//Operación 6 - FIN
+
+//Operacion 7 - Generar reporte en la página
+//Obtener el nombre del dia
+function dia($num_dia){
+	switch ($num_dia) {
+		case '0': $nom_dia = "Domingo"; break;
+		
+		case '1': $nom_dia = "Lunes"; break;
+		
+		case '2': $nom_dia = "Martes"; break;
+		
+		case '3': $nom_dia = "Miercoles"; break;
+		
+		case '4': $nom_dia = "Jueves"; break;
+		
+		case '5': $nom_dia = "Viernes"; break;
+		
+		case '6': $nom_dia = "Sabado"; break;
+		
+		default: echo "ERROR GRAVE, CIERRE EL PROGRAMA POR FAVOR"; break;
+	}
+	return $nom_dia;
 }
 
 //Calcular el valor del estimado por día respecto al mes
@@ -898,16 +865,6 @@ function comprobar_opciones(){
 	}else{
 		return false;
 	}
-}
-
-//Realizar la conversión de los números en formato moneda
-function formato_moneda($dato){
-	if($dato != "N/A"){
-		$valor = number_format($dato, 2);
-	}else{
-		$valor = "N/A";
-	}
-	return $valor;
 }
 
 //Generar reporte que se muestra en pantalla
@@ -1382,26 +1339,7 @@ function exportar_pdf(){
 				<title>".$filename."</title>
 			</head>
 			<body>
-				<div class='container'>
-				<table class='notacion'>
-				<tr>
-					<th>NOTACIÓN</th>
-					<th>VA = VENTA ACUMULADA</th>
-					<th>VD = VENTA DIA</th>
-					<th>UA = UTILIDAD ACUMULADA</th>
-					<th>UD = UTILIDAD DIA</th>
-					<th>UE = UTILIDAD ESTIMADA</th>
-				</tr>
-				<tr>
-					<th>VE = VENTA ESTIMADA</th>
-					<th>UM = UTILIDAD MENSUAL</th>
-					<th>RD = GASTO REAL DIA</th>
-					<th>RE = GASTO REAL ACUMULADO</th>
-					<th>ED = GASTO ESTIMADO DIA</th>
-					<th>EA = GASTO ESTIMADO ACUMULADO</th>
-				</tr>
-				</table>";
-	$cont_tablas = 0;
+				<div class='container'>";
 	foreach ($datos_fecha as $data) {
 		//Extraer la fecha del valor actual
 		$fecha = $data["fecha"];
@@ -1447,32 +1385,30 @@ function exportar_pdf(){
 		$html = $html."
 		<table class='datos_tabla'>
 				<tr>
-					<th class='text-center w_7 inicio_columna cont_columna final_columna'>DIA</th>
-					<th class='text-center w_9 inicio_columna'>AL DIA</th>
-					<th class='text-center w_9'></th>
-					<th class='text-center w_9'></th>
+					<th class='text-center w_7 inicio_columna cont_columna final_columna'>FECHA</th>
+					<th class='text-center w_9 inicio_columna'>VENTA</th>
+					<th class='text-center w_9 final_columna'></th>
+					<th class='text-center w_9 inicio_columna'>UTILIDAD</th>
 					<th class='text-center w_9 final_columna'></th>
 					<th class='text-center w_9 inicio_columna'>ESTIMADO</th>
 					<th class='text-center w_9'></th>
 					<th class='text-center w_3 final_columna'></th>
-					<th class='text-center w_8 inicio_columna'>GASTOS</th>
-					<th class='text-center w_8'></th>
-					<th class='text-center w_8'></th>
-					<th class='text-center w_8 final_columna'></th>
+					<th class='text-center w_8 inicio_columna' colspan='2'>GASTO REAL</th>
+					<th class='text-center w_8 inicio_columna final_columna' colspan='2'>GASTO ESTIMADO</th>
 				</tr>
 				<tr>
 					<th class='text-center w_7 inicio_columna cont_columna final_columna'>".$fecha_dia."-".$fecha_mes."-".$fecha_anio."</th> 
-					<th class='text-center w_9 inicio_columna'>VA</th>
-					<th class='text-center w_9 cont_columna'>VD</th>
-					<th class='text-center w_9 cont_columna'>UA</th>
-					<th class='text-center w_9 cont_columna final_columna'>UD</th>
-					<th class='text-center w_9 inicio_columna'>VE</th>
-					<th class='text-center w_9 cont_columna'>UE</th>
-					<th class='text-center w_3 cont_columna final_columna'>UM</th>
-					<th class='text-center w_8 inicio_columna'>RD</th>
-					<th class='text-center w_8 cont_columna'>RA</th>
-					<th class='text-center w_8 cont_columna'>ED</th>
-					<th class='text-center w_8 cont_columna final_columna'>EA</th>
+					<th class='text-center w_9 inicio_columna'>Acumulada</th>
+					<th class='text-center w_9 cont_columna final_columna'>Al día</th>
+					<th class='text-center w_9 inicio_columna'>Acumulada</th>
+					<th class='text-center w_9 cont_columna final_columna'>Al día</th>
+					<th class='text-center w_9 inicio_columna'>Venta</th>
+					<th class='text-center w_9 cont_columna'>Utilidad</th>
+					<th class='text-center w_3 cont_columna final_columna'>Mensual</th>
+					<th class='text-center w_8 inicio_columna'>Al día</th>
+					<th class='text-center w_8 cont_columna final_columna'>Acumulado</th>
+					<th class='text-center w_8 inicio_columna'>Al día</th>
+					<th class='text-center w_8 cont_columna final_columna'>Acumulado</th>
 				</tr>";
 
 		$data_venta = recuperar_datos_venta($fecha, $usuario);
@@ -1493,16 +1429,16 @@ function exportar_pdf(){
 					<tr>
 						<td class='text-center w_7 inicio_columna cont_columna final_columna'>".$dato["num_empleado"]."</td>
 						<td class='text-right w_9 inicio_columna'>$ ".formato_moneda($acumulado_emp["venta_acumulada"])."</td>
-						<td class='text-right w_9 cont_columna'>$ ".formato_moneda($dato["venta_dia"])."</td>
-						<td class='text-right w_9 cont_columna'>$ ".formato_moneda($acumulado_emp["utilidad_acumulada"])."</td>
+						<td class='text-right w_9 cont_columna final_columna'>$ ".formato_moneda($dato["venta_dia"])."</td>
+						<td class='text-right w_9 inicio_columna'>$ ".formato_moneda($acumulado_emp["utilidad_acumulada"])."</td>
 						<td class='text-right w_9 cont_columna final_columna'>$ ".formato_moneda($dato["utilidad_dia"])."</td>";
 			}else{
 				$html = $html."
 					<tr>
 						<td class='text-center w_7 inicio_columna cont_columna final_columna'> - </td>
 						<td class='text-center w_9 inicio_columna'> - </td>
-						<td class='text-center w_9 cont_columna'> - </td>
-						<td class='text-center w_9 cont_columna'> - </td>
+						<td class='text-center w_9 cont_columna final_columna'> - </td>
+						<td class='text-center w_9 inicio_columna'> - </td>
 						<td class='text-center w_9 cont_columna final_columna'> - </td>";
 			}
 							
@@ -1511,9 +1447,9 @@ function exportar_pdf(){
 					case 4:
 						$html = $html."
 						<td class='text-center w_9 inicio_columna bold'> TOTAL </td>
-						<td class='text-right w_9 cont_columna'>$ ".formato_moneda($vt_acumulada)."</td>
-						<td class='text-right w_9 cont_columna'>$ ".formato_moneda($datos_dia_total["venta_dia_total"])."</td>
-						<td class='text-right w_9 cont_columna'>$ ".formato_moneda($ut_acumulada)."</td>
+						<td class='text-right w_9 inicio_columna'>$ ".formato_moneda($vt_acumulada)."</td>
+						<td class='text-right w_9 cont_columna final_columna'>$ ".formato_moneda($datos_dia_total["venta_dia_total"])."</td>
+						<td class='text-right w_9 inicio_columna'>$ ".formato_moneda($ut_acumulada)."</td>
 						<td class='text-right w_9 cont_columna final_columna'>$ ".formato_moneda($datos_dia_total["utilidad_dia_total"])."</td>
 						";
 						break;
@@ -1526,9 +1462,9 @@ function exportar_pdf(){
 					case 4:
 						$html = $html."
 						<td class='text-center w_9 inicio_columna'> - </td>
-						<td class='text-center w_9 cont_columna'> - </td>
-						<td class='text-center w_9 cont_columna'> - </td>
-						<td class='text-center w_9 cont_columna'> - </td>
+						<td class='text-center w_9 inicio_columna'> - </td>
+						<td class='text-center w_9 cont_columna final_columna'> - </td>
+						<td class='text-center w_9 inicio_columna'> - </td>
 						<td class='text-center w_9 cont_columna final_columna'> - </td>
 						";
 						break;
@@ -1591,8 +1527,8 @@ function exportar_pdf(){
 					case 1:
 						$html = $html."
 							<td class='text-right w_8 inicio_columna'>$ ".formato_moneda($datos_gasto["gasto_real_dia"])."</td>
-							<td class='text-right w_8 cont_columna'>$ ".formato_moneda($datos_gasto["gasto_estimado_dia"])."</td>
-							<td class='text-right w_8 cont_columna'>$ ".formato_moneda($datos_gasto_acumulado["gasto_real_acumulado"])."</td>
+							<td class='text-right w_8 cont_columna final_columna'>$ ".formato_moneda($datos_gasto["gasto_estimado_dia"])."</td>
+							<td class='text-right w_8 inicio_columna'>$ ".formato_moneda($datos_gasto_acumulado["gasto_real_acumulado"])."</td>
 							<td class='text-right w_8 cont_columna final_columna'>$ ".formato_moneda($datos_gasto_acumulado["gasto_estimado_acumulado"])."</td>
 						</tr>
 						";
@@ -1601,8 +1537,8 @@ function exportar_pdf(){
 					default:
 						$html = $html."
 							<td class='text-center w_8 inicio_columna'> - </td>
-							<td class='text-center w_8 cont_columna'> - </td>
-							<td class='text-center w_8 cont_columna'> - </td>
+							<td class='text-center w_8 cont_columna final_columna'> - </td>
+							<td class='text-center w_8 inicio_columna'> - </td>
 							<td class='text-center w_8 cont_columna final_columna'> - </td>
 						</tr>
 						";
@@ -1611,8 +1547,8 @@ function exportar_pdf(){
 			}else{
 				$html = $html."
 						<td class='text-center w_8 inicio_columna'> - </td>
-						<td class='text-center w_8 cont_columna'> - </td>
-						<td class='text-center w_8 cont_columna'> - </td>
+						<td class='text-center w_8 cont_columna final_columna'> - </td>
+						<td class='text-center w_8 inicio_columna'> - </td>
 						<td class='text-center w_8 cont_columna final_columna'> - </td>
 					</tr>
 					";
@@ -1628,8 +1564,8 @@ function exportar_pdf(){
 					<tr>
 						<td class='text-center w_7 inicio_columna cont_columna final_columna'> - </td>
 						<td class='text-center w_9 inicio_columna'> - </td>
-						<td class='text-center w_9 cont_columna'> - </td>
-						<td class='text-center w_9 cont_columna'> - </td>
+						<td class='text-center w_9 cont_columna final_columna'> - </td>
+						<td class='text-center w_9 inicio_columna'> - </td>
 						<td class='text-center w_9 cont_columna final_columna'> - </td>";
 			}else{
 				$html = $html."<tr>";
@@ -1645,8 +1581,8 @@ function exportar_pdf(){
 						$html = $html."
 						<td class='text-center w_7 inicio_columna cont_columna final_columna bold'> TOTAL </td>
 						<td class='text-right w_9 inicio_columna'>$ ".formato_moneda($vt_acumulada)."</td>
-						<td class='text-right w_9 cont_columna'>$ ".formato_moneda($datos_dia_total["venta_dia_total"])."</td>
-						<td class='text-right w_9 cont_columna'>$ ".formato_moneda($ut_acumulada)."</td>
+						<td class='text-right w_9 cont_columna final_columna'>$ ".formato_moneda($datos_dia_total["venta_dia_total"])."</td>
+						<td class='text-right w_9 inicio_columna'>$ ".formato_moneda($ut_acumulada)."</td>
 						<td class='text-right w_9 cont_columna final_columna'>$ ".formato_moneda($datos_dia_total["utilidad_dia_total"])."</td>
 						";
 						break;
@@ -1660,8 +1596,8 @@ function exportar_pdf(){
 						$html = $html."
 						<td class='text-center w_9 inicio_columna'> - </td>
 						<td class='text-center w_9 inicio_columna'> - </td>
-						<td class='text-center w_9 cont_columna'> - </td>
-						<td class='text-center w_9 cont_columna'> - </td>
+						<td class='text-center w_9 cont_columna final_columna'> - </td>
+						<td class='text-center w_9 inicio_columna'> - </td>
 						<td class='text-center w_9 cont_columna final_columna'> - </td>
 						</tr>
 						";
@@ -1723,8 +1659,8 @@ function exportar_pdf(){
 					case 1:
 						$html = $html."
 						<td class='text-right w_8 inicio_columna'>$ ".formato_moneda($datos_gasto["gasto_real_dia"])."</td>
-						<td class='text-right w_8 cont_columna'>$ ".formato_moneda($datos_gasto["gasto_estimado_dia"])."</td>
-						<td class='text-right w_8 cont_columna'>$ ".formato_moneda($datos_gasto_acumulado["gasto_real_acumulado"])."</td>
+						<td class='text-right w_8 cont_columna final_columna'>$ ".formato_moneda($datos_gasto["gasto_estimado_dia"])."</td>
+						<td class='text-right w_8 inicio_columna'>$ ".formato_moneda($datos_gasto_acumulado["gasto_real_acumulado"])."</td>
 						<td class='text-right w_8 cont_columna final_columna'>$ ".formato_moneda($datos_gasto_acumulado["gasto_estimado_acumulado"])."</td>
 						";
 						break;
@@ -1732,8 +1668,8 @@ function exportar_pdf(){
 					default:
 						$html = $html."
 						<td class='text-center w_8 inicio_columna'> - </td>
-						<td class='text-center w_8 cont_columna'> - </td>
-						<td class='text-center w_8 cont_columna'> - </td>
+						<td class='text-center w_8 cont_columna final_columna'> - </td>
+						<td class='text-center w_8 inicio_columna'> - </td>
 						<td class='text-center w_8 cont_columna final_columna'> - </td>
 						</tr>
 						";
@@ -1742,8 +1678,8 @@ function exportar_pdf(){
 			}else{
 				$html = $html."
 					<td class='text-center w_8 inicio_columna'> - </td>
-					<td class='text-center w_8 cont_columna'> - </td>
-					<td class='text-center w_8 cont_columna'> - </td>
+					<td class='text-center w_8 cont_columna final_columna'> - </td>
+					<td class='text-center w_8 inicio_columna'> - </td>
 					<td class='text-center w_8 cont_columna final_columna'> - </td>
 					</tr>
 					";
@@ -1752,13 +1688,7 @@ function exportar_pdf(){
 
 		$html = $html."
 		</table>
-		";
-		$cont_tablas++;
-		if($cont_tablas == 4){
-			$html = $html."<br><br>";
-			$cont_tablas = 0;
-		}
-	}
+		";	}
 	$html = $html."
 		</div>
 		</body>
@@ -1785,27 +1715,27 @@ if(isset($_POST["op"])){
 			break;
 		
 		case 1:
-			agregar_venta();
+			facturas_pendientes();
 			break;
 		
 		case 2:
-			agregar_gastos();
+			actualizar_costeo();
 			break;
 		
 		case 3:
-			mostrar_pendientes($_POST["usuario"]);
+			facturas_canceladas();
 			break;
 
 		case 4:
-			actualizar_pendientes();
+			autocompletado();
 			break;
 
 		case 5:
-			mostrar_usuario($_POST["usuario"]);
+			facturas_general();
 			break;
 
 		case 6:
-			editar_usuario();
+			generar_metas_mensuales();
 			break;
 
 		case 7:
