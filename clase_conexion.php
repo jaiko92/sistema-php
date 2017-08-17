@@ -28,7 +28,8 @@ class ConexionBDD{
     private function realizaConsulta($consulta){
       try{
         $this->conexion();
-        $this->ejecutador = $this->pdo->prepare($consulta); $this->ejecutador->execute();
+        $this->ejecutador = $this->pdo->prepare($consulta);
+        $this->ejecutador->execute();
         $this->cerrarConexion();
         return true;
       }catch (DOException $e){
@@ -36,6 +37,19 @@ class ConexionBDD{
       }
     }
     
+    private function realizaConsultaMat($consulta){
+      try{
+        $this->conexion();
+        $this->ejecutador = $this->pdo->prepare($consulta);
+        $this->ejecutador->execute();
+        $arr_dato = $this->fetch(PDO::FETCH_BOTH);
+        $this->cerrarConexion();
+        return $arr_dato;
+      }catch(DOException $e){
+        return "ERROR: ".$e->getMessage();
+      }
+    }
+
     public function ejecutarConsulta($consulta){
       try{
         $this->conexion();
@@ -116,8 +130,8 @@ class ConexionBDD{
   }
     
   public function resultadoUnico($tabla , $campoR , $condicion){
-    $condicion = "SELECT  `$campoR` FROM `$tabla` WHERE $condicion ";
-    $dato = $this->obtenerDatos( $condicion );
+    $sql = "SELECT `$campoR` FROM `$tabla` WHERE $condicion ";
+    $dato = $this->obtenerDatos( $sql );
     if(isset($dato[0][0])){
       return $dato[0][0];
     }else{
@@ -125,6 +139,16 @@ class ConexionBDD{
     }
   }
   
+  public function obtenerSuma($tabla, $campoS, $condicion){
+    $sql = "SELECT SUM(`$campoS`) FROM `$tabla` WHERE $condicion";
+    $dato = $this->realizaConsultaMat($sql);
+    if(is_array($dato)){
+      return $dato[0];
+    }else{
+      return NULL;
+    }
+  }
+
   public function cerrarConexion() { $pdo = null ; }
   
 }

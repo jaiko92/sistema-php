@@ -25,7 +25,7 @@
 								<input type="date" name="fecha_final" id="fecha_final" class="form-control" required>
 							</div>
 
-							<input type="hidden" name="op" id="op" value="1">
+							<input type="hidden" name="op" id="op" value="8">
 							<div class="col-xs-12 btn-spc">
 								<button id="btn_generar_reporte" class="btn btn-primary">
 									Generar reporte

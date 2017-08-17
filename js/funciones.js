@@ -113,6 +113,18 @@ $(document).ready(function(){
 		return false;
 	});//click-function
 
+	//Ingresar meta mensual - Operación 7
+	$("#btn_ingresar_metas").click(function(){
+		$.ajax({
+			data: $("#form_ingresar_metas").serialize(),
+			url: 'enviar_info.php', type: 'post',
+			success: function(data) {
+				$(".contenido").html(data);
+			}//data
+		});//ajax
+		return false;
+	});//click-function
+
 	//Boton para enviar y guardar los gastos - Operacion 2
 	$("#envio_gastos").click(function(){
 		$.ajax({

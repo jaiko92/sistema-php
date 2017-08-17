@@ -1,3 +1,8 @@
+.h4, .h5, .h6, h4, h5, h6{
+	margin-top: 10px;
+	margin-bottom: 10px;
+}
+
 label{
 	padding: 10px;
 }
@@ -158,9 +163,12 @@ label{
 table{
 	font-family: 'Arial', sans-serif;
 	font-size: 12px;
-	width: 100%;
 	border-collapse: collapse;
 	margin-bottom: 10px;
+}
+
+.datos_tabla{
+	width: 100%;
 }
 
 .notacion{
@@ -173,6 +181,7 @@ table{
 
 .cont_columna{
 	border-left: 1px solid #000;
+	border-right: 1px solid #000;
 }
 
 .final_columna{
