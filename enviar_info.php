@@ -171,9 +171,11 @@ function actualizar_costeo(){
 	$conexion = new ConexionBDD();
 
 	$tabla = "factura";
-	$datos = array(
-		array( "cost" , $_POST["costeo"])
-	);
+	$datosNombre = array("cost");
+	$datosTabla = array($_POST["costeo"]);
+
+	$datos = array($datosNombre ,$datosTabla);
+	
 	$sql = "folio = ".$_POST["folio"];
 	$conexion->actualizarDato($tabla, $datos, $sql);
 	?>
@@ -577,10 +579,15 @@ function ingresar_meta_mensual(){
 		$sql = "SELECT * FROM ".$nom_tabla." WHERE mes = '".$fecha."'";
 		$existe_mes = $conexion->existeDato($sql);
 		if($existe_mes == false){
-			$datos = array(
-				array( "mes" , $fecha ), array( "valor_meta" , $valor_meta ), array( "porcentaje_utilidad" , $porcentaje), 
-				array( "id_usuario" , $usuario)
+			$datosTabla = array(
+				"mes", "valor_meta", "porcentaje_utilidad", "id_usuario"
 			);
+
+			$datosNombre = array(
+				$fecha, $valor_meta, $porcentaje, $usuario
+			);
+
+			$datos = array($datosNombre, $datosTabla);
 
 			$bandera = $conexion->insertarDato($nom_tabla, $datos);
 			if($bandera == true){
@@ -703,10 +710,9 @@ function calcular_estimado_por_dia($fecha){
 		$utilidad_est_meta_25 = bcdiv(bcmul(bcmul($cantidad_meta, 0.25, 4), $porcentaje, 4), $dias_habiles, 4);
 
 		$arr_estimado_dia = array(
-			array( '0' , $venta_est_meta_100), array( '1' , $utilidad_est_meta_100), 
-			array( '2' , $venta_est_meta_75), array( '3' , $utilidad_est_meta_75), 
-			array( '4' , $venta_est_meta_50), array( '5' , $utilidad_est_meta_50), 
-			array( '6' , $venta_est_meta_25), array( '7' , $utilidad_est_meta_25),
+			$venta_est_meta_100, $utilidad_est_meta_100, $venta_est_meta_75
+			, $utilidad_est_meta_75, $venta_est_meta_50, $utilidad_est_meta_50, $venta_est_meta_25
+			, $utilidad_est_meta_25
 		);
 
 		return $arr_estimado_dia;
@@ -723,8 +729,8 @@ function calcular_estimado_dia($fecha){
 	$arr_estimado_dia = calcular_estimado_por_dia($fecha);
 
 	if(is_array($arr_estimado_dia)){
-		foreach ($arr_estimado_dia as list($variable , $valor)){
-			switch($variable){
+		for($i = 0; $i < sizeof($arr_estimado_dia); $i++){
+			switch($i){
 				case '0': $venta_est_meta_100 = $valor; break;
 
 				case '1': $utilidad_est_meta_100 = $valor; break;

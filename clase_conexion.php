@@ -64,9 +64,9 @@ class ConexionBDD{
   public function existeDato($consulta){
     try{
     $this->conexion();
-    $nc = $this->pdo->query($consulta)->rowCount();
+    $nc = mysqli_query($this, $consulta);
     $this->cerrarConexion();
-      if ($nc != 0){
+      if (mysqli_num_rows($nc) != 0){
         return true;
       }else{
         return false;
@@ -88,10 +88,12 @@ class ConexionBDD{
   
   public function insertarDato($tabla , $datos){
     if(is_array($datos)){
+      $datosNombre = $datos[0];
+      $datosTabla = $datos[1];
       $insert = "(" ; $values = ' VALUES(';
-      foreach ($datos as list($nombreC , $datoC)){
-        $insert = $insert . ' `'. $nombreC . '` ,' ;
-        $values = $values . ' \''. $datoC . '\' ,' ;
+      for($i = 0; $i < sizeof($datosNombre); $i++){
+        $insert = $insert . ' `'. $datosNombre[$i] . '` ,' ;
+        $values = $values . ' \''. $datosTabla[$i] . '\' ,' ;
       }
       $insert = substr($insert ,  0, -1) . ')';
       $values = substr($values ,  0, -1) . ')';
@@ -111,14 +113,17 @@ class ConexionBDD{
   
   public function actualizarDato($tabla , $datos , $condicion){
     if(is_array($datos)){
+      $datosNombre = $datos[0];
+      $datosTabla = $datos[1];
       $set= '';
-      foreach ($datos as list($nombreC , $datoC))
-      $set =
-      $set . ' `'.
-      $nombreC . '` = \''.
-      $datoC . '\' ,' ;
+      for($i = 0; $i < sizeof($datosNombre); $i++){
+        $set =
+        $set . ' `'.
+        $datosNombre[$i] . '` = \''.
+        $datosTabla[$i] . '\' ,' ;
+        $set = substr($set ,  0, -1) ;
+      }
       
-      $set = substr($set ,  0, -1) ;
       $sql = "UPDATE $tabla SET $set WHERE $condicion ;";
       //echo $sql;
       
