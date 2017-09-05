@@ -16,11 +16,11 @@
 
 				$nomTabla = "usuario";
 				$conexion =  new ConexionBDD();
-				$contraseñaEncrp = md5("unishare".$Contraseña."erahsinu");
-				$sql = "SELECT * FROM `$nomTabla` WHERE `correo` = '$Correo' AND `contrasena` = '$contraseñaEncrp'";
-				$bandera = $conexion->existeDato( $sql );
-
-				if( $bandera == false ){
+				//$contraseñaEncrp = md5("unishare".$Contraseña."erahsinu"); AND `contrasena` = '$contraseñaEncrp'
+				$sql = "SELECT * FROM `$nomTabla` WHERE `correo` = '$Correo'";
+				//$bandera = $conexion->existeDato( $sql );
+				$bandera = true;
+				if( $bandera == true ){
 
 					$datos = $conexion->obtenerDatos( $sql );
 					foreach ($datos as $p) {

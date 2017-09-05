@@ -73,13 +73,15 @@ include "clase_conexion.php";
 
 include "header.php";
 
-include "ingresar_valores.php";
+include "facturas_pendientes.php";
 
-include "pendientes.php";
+include "facturas_canceladas.php";
 
-include "datos_usuario.php";
+include "buscar_facturas.php";
 
-include "reporte.php";
+include "metas_mensuales.php";
+
+include "generar_reporte.php";
 
 include "footer.php";
 ?>

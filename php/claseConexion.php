@@ -52,12 +52,12 @@
     $this->conexion();
     $nc = $this->pdo->query($consulta)->rowCount();
     $this->cerrarConexion();
-    if ($nc == 0){
-      return true;
-    }else{
-      return false;
-    }
-    catch (DOException $e){
+      if ($nc != 0){
+        return true;
+      }else{
+        return false;
+      }
+    }catch (DOException $e){
       return "ERROR: " . $e->getMessage();
     }
   }
@@ -73,20 +73,21 @@
   }
   
   public function insertarDato($tabla , $datos){
-  if(is_array($datos)){
-    $insert = "(" ; $values = ' VALUES(';
-    foreach ($datos as list($nombreC , $datoC)){
-      $insert = $insert . ' `'. $nombreC . '` ,' ;
-      $values = $values . ' \''. $datoC . '\' ,' ;
+    if(is_array($datos)){
+      $insert = "(" ; $values = ' VALUES(';
+      foreach ($datos as list($nombreC , $datoC)){
+        $insert = $insert . ' `'. $nombreC . '` ,' ;
+        $values = $values . ' \''. $datoC . '\' ,' ;
+      }
+      $insert = substr($insert ,  0, -1) . ')';
+      $values = substr($values ,  0, -1) . ')';
+      $sql = "INSERT INTO $tabla $insert $values ;";
+      //echo $sql;
+      $this->ejecutarConsulta($sql);
+      return true;
+    }else{
+      return false;
     }
-    $insert = substr($insert ,  0, -1) . ')';
-    $values = substr($values ,  0, -1) . ')';
-    $sql = "INSERT INTO $tabla $insert $values ;";
-    //echo $sql;
-    $this->ejecutarConsulta($sql);
-    return true;
-  }else{
-    return false;
   }
   
   public function eliminarDato($tabla , $campo , $valor ){
@@ -95,31 +96,33 @@
   }
   
   public function actualizarDato($tabla , $datos , $condicion){
-  if(is_array($datos)){
-    $set= '';
-    foreach ($datos as list($nombreC , $datoC))
-    $set =
-    $set . ' `'.
-    $nombreC . '` = \''.
-    $datoC . '\' ,' ;
-    
-    $set = substr($set ,  0, -1) ;
-    $sql = "UPDATE $tabla SET $set WHERE $condicion ;";
-    //   echo $sql;
-    
-    $this->ejecutarConsulta($sql);
-    return true;
-  }else{
-    return false;
+    if(is_array($datos)){
+      $set= '';
+      foreach ($datos as list($nombreC , $datoC))
+      $set =
+      $set . ' `'.
+      $nombreC . '` = \''.
+      $datoC . '\' ,' ;
+      
+      $set = substr($set ,  0, -1) ;
+      $sql = "UPDATE $tabla SET $set WHERE $condicion ;";
+      //echo $sql;
+      
+      $this->ejecutarConsulta($sql);
+      return true;
+    }else{
+      return false;
+    }
   }
-  
+    
   public function resultadoUnico($tabla , $campoR , $condicion){
     $condicion = "SELECT  `$campoR` FROM `$tabla` WHERE $condicion ";
     $dato = $this->obtenerDatos( $condicion );
-  if(isset($dato[0][0])){
-    return $dato[0][0];
-  }else{
-    return null;
+    if(isset($dato[0][0])){
+      return $dato[0][0];
+    }else{
+      return null;
+    }
   }
   
   public function cerrarConexion() { $pdo = null ; }

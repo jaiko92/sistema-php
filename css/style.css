@@ -1,3 +1,8 @@
+.h4, .h5, .h6, h4, h5, h6{
+	margin-top: 10px;
+	margin-bottom: 10px;
+}
+
 label{
 	padding: 10px;
 }
@@ -99,13 +104,27 @@ label{
 	padding-bottom: 15px;
 }
 
-.btn-espacio{
-	padding: 10px;
+/*Eliminar estilos que genera Bootstrap*/
+.del-padding{
+	padding: 0px
+}
+/*FIN Eliminar estilos Bootstrap*/
+
+/*Añadidos para mejor presentación en general*/
+.btn-spc{
+	padding: 1em;
+}
+/*FIN Añadidos de presentación*/
+
+/*Clases para tablas simuladas por las búsquedas*/
+.tabla-spc{
+	margin: 0.2em 0;
 }
 
-.form_espacio{
-	padding:5px 0px;
+.tabla-hover:hover{
+	background-color: #DDD;
 }
+/*FIN de Tablas simuladas*/
 
 .meta_arriba{
 	background-color: #3C763D;
@@ -128,6 +147,7 @@ label{
 	line-height: 3;
 }
 
+/*Clases para generar correctamente el reporte de ventas*/
 .btn_pdf{
 	padding: 20px 0px;
 }
@@ -143,9 +163,12 @@ label{
 table{
 	font-family: 'Arial', sans-serif;
 	font-size: 12px;
-	width: 100%;
 	border-collapse: collapse;
-	margin-bottom: 20px;
+	margin-bottom: 10px;
+}
+
+.datos_tabla{
+	width: 100%;
 }
 
 .notacion{
@@ -158,6 +181,7 @@ table{
 
 .cont_columna{
 	border-left: 1px solid #000;
+	border-right: 1px solid #000;
 }
 
 .final_columna{
@@ -185,3 +209,4 @@ table{
 .w_9{
 	width: 9.4%;
 }
+/*FIN de Clases de reporte de ventas*/

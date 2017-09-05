@@ -1,12 +1,12 @@
 <?php
 
-  class ConexionBDD{
+class ConexionBDD{
     var  $usuario , $password , $pdo , $sql, $bdd,
     $reader , $consulta , $preparador , $ejecutor;
   
     function __construct(){  
-      $this->usuario  = 'root';  $this->password = '';
-      $this->bdd = "projectbt";
+      $this->usuario  = 'basedd';  $this->password = 'mat791027c39';
+      $this->bdd = "reportes";
     }
   
     function __construct2($usuario , $password , $bdd){
@@ -17,7 +17,7 @@
     
     public function conexion(){
       try{
-        $this->pdo = new PDO ("mysql:host=localhost;dbname=$this->bdd", $this->usuario, $this->password);
+        $this->pdo = new PDO ("mysql:host=mpc2;dbname=$this->bdd", $this->usuario, $this->password);
         $this->pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
         return true;
       }catch(PDOException $e){
@@ -28,7 +28,8 @@
     private function realizaConsulta($consulta){
       try{
         $this->conexion();
-        $this->ejecutador = $this->pdo->prepare($consulta); $this->ejecutador->execute();
+        $this->ejecutador = $this->pdo->prepare($consulta);
+        $this->ejecutador->execute();
         $this->cerrarConexion();
         return true;
       }catch (DOException $e){
@@ -36,6 +37,19 @@
       }
     }
     
+    private function realizaConsultaMat($consulta){
+      try{
+        $this->conexion();
+        $this->ejecutador = $this->pdo->prepare($consulta);
+        $this->ejecutador->execute();
+        $arr_dato = $this->fetch(PDO::FETCH_BOTH);
+        $this->cerrarConexion();
+        return $arr_dato;
+      }catch(DOException $e){
+        return "ERROR: ".$e->getMessage();
+      }
+    }
+
     public function ejecutarConsulta($consulta){
       try{
         $this->conexion();
@@ -116,8 +130,8 @@
   }
     
   public function resultadoUnico($tabla , $campoR , $condicion){
-    $condicion = "SELECT  `$campoR` FROM `$tabla` WHERE $condicion ";
-    $dato = $this->obtenerDatos( $condicion );
+    $sql = "SELECT `$campoR` FROM `$tabla` WHERE $condicion ";
+    $dato = $this->obtenerDatos( $sql );
     if(isset($dato[0][0])){
       return $dato[0][0];
     }else{
@@ -125,8 +139,18 @@
     }
   }
   
+  public function obtenerSuma($tabla, $campoS, $condicion){
+    $sql = "SELECT SUM(`$campoS`) FROM `$tabla` WHERE $condicion";
+    $dato = $this->realizaConsultaMat($sql);
+    if(is_array($dato)){
+      return $dato[0];
+    }else{
+      return NULL;
+    }
+  }
+
   public function cerrarConexion() { $pdo = null ; }
   
-  }
+}
 
 ?>
